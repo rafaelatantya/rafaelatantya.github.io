@@ -7,12 +7,13 @@
         <script src="./geo-fetch.js"></script>
     </head>
     <body>
-        Your IP Info (JSON) :<br>
-        <span id="ip-info"></span>
-
+        Your IP Info (JSON.stringify()) :<br>
+        <span id="ip-info"></span><br>
+        Current Time : <span id="cur-time"></span>
         <script>
             $(document).ready(()=>{
                 $("#ip-info").html(JSON.stringify(userIPInfo));
+                $("#cur-time").html(new Date.now);
                 console.log(userIPInfo)
             });
         </script>
