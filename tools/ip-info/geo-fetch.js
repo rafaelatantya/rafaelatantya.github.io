@@ -11,7 +11,7 @@ const userIpSettings = {
 const ipInfoSettings = {
   "async": false,
   "crossDomain": true,
-  "url": `https://freegeoip.io/json/${userIpAddrFinal}`,
+  "url": `https://freeipapi.com/api/json/${userIpAddrFinal}`,
   "method": "GET"
 };
 
