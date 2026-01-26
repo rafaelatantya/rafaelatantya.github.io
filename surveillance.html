@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Kuliah Cepat</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #22c55e; /* Hijau IPB */
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            color: var(--accent);
+        }
+
+        .status {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Search Input */
+        .search-box {
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            margin-bottom: 25px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid #334155;
+            background: var(--card);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        input:focus {
+            border-color: var(--accent);
+        }
+
+        /* Schedule Cards */
+        .schedule-item {
+            background: var(--card);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--accent);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .day-time {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            color: var(--accent);
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        .subject-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .meta-info {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            margin-top: 50px;
+            color: var(--text-muted);
+        }
+
+        /* Label Hari */
+        .day-group {
+            background: #334155;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📅 Jadwal Kuliahku</h1>
+        <div id="db-status" class="status">Menghubungkan ke database...</div>
+    </header>
+
+    <div class="search-box">
+        <input type="text" id="search" placeholder="Cari namamu di sini..." disabled>
+    </div>
+
+    <div id="results">
+        <div class="empty-state">Database sedang dimuat, tunggu bentar ya...</div>
+    </div>
+</div>
+
+<script>
+    let scheduleDb = [];
+    const searchInput = document.getElementById('search');
+    const resultsDiv = document.getElementById('results');
+    const statusDiv = document.getElementById('db-status');
+    const hariUrut = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
+
+    // 1. Ambil data dari db.json
+    fetch('db.json')
+        .then(response => response.json())
+        .then(data => {
+            scheduleDb = data;
+            statusDiv.innerText = `Database Ready: ${data.length} Kelas Terdaftar`;
+            searchInput.disabled = false;
+            searchInput.placeholder = "Ketik namamu (min. 3 huruf)...";
+            resultsDiv.innerHTML = '<div class="empty-state">Siap cari jadwal! Silakan ketik namamu.</div>';
+        })
+        .catch(err => {
+            statusDiv.innerText = "Gagal memuat db.json. Pastiin filenya ada!";
+            console.error(err);
+        });
+
+    // 2. Fungsi Pencarian
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        
+        if (query.length < 3) {
+            resultsDiv.innerHTML = '<div class="empty-state">Ketik minimal 3 huruf untuk mencari...</div>';
+            return;
+        }
+
+        // Filter data berdasarkan nama mahasiswa
+        let matches = [];
+        scheduleDb.forEach(item => {
+            if (item.m.some(mhs => mhs.includes(query))) {
+                item.j.forEach(jadwalStr => {
+                    const [dayTime, room] = jadwalStr.split(' di ');
+                    const [hari, waktu] = dayTime.split(' ');
+                    matches.push({
+                        hari,
+                        waktu,
+                        nama: item.n,
+                        kode: item.k,
+                        lokasi: room || 'Ruangan Disesuaikan'
+                    });
+                });
+            }
+        });
+
+        // Sorting: Hari dulu, baru Jam
+        matches.sort((a, b) => {
+            const indexA = hariUrut.indexOf(a.hari);
+            const indexB = hariUrut.indexOf(b.hari);
+            if (indexA !== indexB) return indexA - indexB;
+            return a.waktu.localeCompare(b.waktu);
+        });
+
+        // Render hasil
+        renderResults(matches);
+    });
+
+    function renderResults(data) {
+        if (data.length === 0) {
+            resultsDiv.innerHTML = '<div class="empty-state">Yah, nama kamu gak ketemu di jadwal mana pun.</div>';
+            return;
+        }
+
+        let html = '';
+        let currentDay = '';
+
+        data.forEach(item => {
+            // Tambahin header hari kalau ganti hari
+            if (item.hari !== currentDay) {
+                currentDay = item.hari;
+                html += `<div class="day-group">${currentDay.toUpperCase()}</div>`;
+            }
+
+            html += `
+                <div class="schedule-item">
+                    <div class="day-time">
+                        <span>${item.hari}</span>
+                        <span>${item.waktu}</span>
+                    </div>
+                    <div class="subject-name">${item.nama}</div>
+                    <div class="meta-info">
+                        <span>🆔 ${item.kode}</span>
+                        <span>📍 ${item.lokasi}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        resultsDiv.innerHTML = html;
+    }
+</script>
+
+</body>
+</html>
