@@ -3,49 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jadwal Kuliah Paralel</title>
+    <title>Jadwal Kuliah IPB - Pro Search</title>
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --accent: #22c55e; --border: #334155; --text: #f1f5f9; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 700px; }
+        .container { width: 100%; max-width: 800px; }
         
-        /* 10 Progress Bars Styling */
-        .progress-grid { 
-            display: grid; 
-            grid-template-columns: repeat(5, 1fr); 
-            gap: 8px; 
-            margin-bottom: 20px; 
-        }
-        .bar-container { background: #334155; height: 6px; border-radius: 10px; overflow: hidden; position: relative; }
+        /* Progress Bars */
+        .progress-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 20px; }
+        .bar-container { background: #334155; height: 6px; border-radius: 10px; overflow: hidden; }
         .bar-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.2s; }
         .bar-label { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 4px; }
 
+        /* Search Area */
+        .search-area { position: sticky; top: 10px; z-index: 100; margin-bottom: 25px; }
+        .search-container { display: flex; gap: 10px; margin-bottom: 8px; }
         input { 
-            width: 100%; padding: 16px; border-radius: 14px; border: 2px solid var(--border);
+            flex: 1; padding: 16px; border-radius: 12px; border: 2px solid var(--border);
             background: var(--card); color: white; font-size: 1rem; outline: none; box-sizing: border-box;
         }
-        input:disabled { opacity: 0.3; cursor: wait; }
+        input:focus { border-color: var(--accent); }
         
-        .day-header { background: var(--accent); color: #052e16; padding: 4px 12px; border-radius: 6px; font-weight: 800; margin: 20px 0 10px; display: inline-block; font-size: 0.8rem; }
-        .schedule-card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 5px solid var(--accent); display: grid; grid-template-columns: 90px 1fr; gap: 15px; }
-        .time-box { font-weight: 700; color: var(--accent); border-right: 1px solid var(--border); display: flex; align-items: center; }
-        .course-info .name { font-weight: 600; margin-bottom: 4px; }
-        .course-info .meta { font-size: 0.8rem; color: #94a3b8; }
-        .empty { text-align: center; padding: 40px; color: #64748b; }
+        button {
+            padding: 0 25px; border-radius: 12px; border: none; background: var(--accent);
+            color: #052e16; font-weight: 800; cursor: pointer; transition: all 0.2s;
+            font-size: 1rem;
+        }
+        button:hover { background: #16a34a; transform: translateY(-2px); }
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        /* Result Counter */
+        #total-count { 
+            font-size: 0.85rem; color: var(--accent); font-weight: 600; 
+            background: rgba(34, 197, 94, 0.1); display: inline-block;
+            padding: 4px 12px; border-radius: 20px; display: none;
+        }
+
+        /* Student Grouping */
+        .student-section { background: rgba(34, 197, 94, 0.05); border: 1px solid #22c55e33; border-radius: 16px; padding: 20px; margin-bottom: 30px; animation: fadeIn 0.4s ease; }
+        .student-header { border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 15px; }
+        .student-name { font-size: 1.3rem; font-weight: 800; color: var(--accent); }
+        .student-nim { font-size: 0.9rem; color: #94a3b8; font-family: monospace; }
+
+        /* Schedule Card */
+        .day-header { background: #334155; padding: 4px 10px; border-radius: 6px; font-weight: bold; margin: 15px 0 8px; display: inline-block; font-size: 0.75rem; }
+        .schedule-card { background: var(--card); padding: 12px 15px; border-radius: 10px; margin-bottom: 8px; display: grid; grid-template-columns: 85px 1fr; gap: 12px; border: 1px solid #334155; }
+        .time-box { font-weight: 700; color: var(--accent); display: flex; align-items: center; font-size: 0.9rem; border-right: 1px solid #334155; }
+        .course-info .name { font-weight: 600; font-size: 0.95rem; margin-bottom: 3px; }
+        .course-info .meta { font-size: 0.75rem; color: #94a3b8; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .empty { text-align: center; padding: 40px; color: #64748b; font-style: italic; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <header style="text-align: center;">
-        <h1 style="color: var(--accent);">🗓️ Jadwal Kuliah IPB</h1>
-        <p id="status-text" style="font-size: 0.8rem; color: #94a3b8;">Menghubungkan ke server...</p>
-        
-        <div class="progress-grid" id="progress-grid">
-            </div>
+    <header style="text-align: center; margin-bottom: 20px;">
+        <h1 style="color: var(--accent); margin-bottom: 5px;">🗓️ Jadwal Kuliah IPB</h1>
+        <p id="status-text" style="font-size: 0.8rem; color: #94a3b8;">Sistem Siap...</p>
+        <div class="progress-grid" id="progress-grid"></div>
     </header>
 
-    <input type="text" id="search" placeholder="Tunggu loading database..." disabled autocomplete="off">
+    <div class="search-area">
+        <div class="search-container">
+            <input type="text" id="search" placeholder="Cari Nama atau NIM..." disabled autocomplete="off">
+            <button id="search-btn" disabled>Cari</button>
+        </div>
+        <div id="total-count">Total: 0 Mahasiswa Ditemukan</div>
+    </div>
+
     <div id="results"></div>
 </div>
 
@@ -53,107 +80,138 @@
     let masterDb = [];
     const TOTAL_FILES = 10;
     const hariUrut = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
-    const progressGrid = document.getElementById('progress-grid');
     const searchInput = document.getElementById('search');
-    const statusText = document.getElementById('status-text');
+    const searchBtn = document.getElementById('search-btn');
+    const resultsDiv = document.getElementById('results');
+    const totalCountLabel = document.getElementById('total-count');
 
-    // Generate 10 progress bars
+    // Init Progress Bars
+    const pg = document.getElementById('progress-grid');
     for(let i=1; i<=TOTAL_FILES; i++) {
-        progressGrid.innerHTML += `
-            <div>
-                <div class="bar-container"><div id="bar-${i}" class="bar-fill"></div></div>
-                <div class="bar-label">Part ${i}</div>
-            </div>
-        `;
+        pg.innerHTML += `<div><div class="bar-container"><div id="bar-${i}" class="bar-fill"></div></div><div class="bar-label">P${i}</div></div>`;
     }
 
-    // Fungsi untuk load satu file
-    async function loadPart(index) {
+    async function loadPart(i) {
         try {
-            const response = await fetch(`db_${index}.json`);
-            const contentLength = response.headers.get('content-length');
-            const total = parseInt(contentLength, 10);
-            const reader = response.body.getReader();
-            
-            let loaded = 0;
-            let chunks = [];
-
+            const res = await fetch(`db_${i}.json`);
+            const total = parseInt(res.headers.get('content-length'), 10);
+            const reader = res.body.getReader();
+            let loaded = 0, chunks = [];
             while(true) {
                 const {done, value} = await reader.read();
                 if (done) break;
                 chunks.push(value);
                 loaded += value.length;
-                
-                if (total) {
-                    const percent = Math.round((loaded / total) * 100);
-                    document.getElementById(`bar-${index}`).style.width = percent + '%';
-                }
+                if (total) document.getElementById(`bar-${i}`).style.width = (loaded/total*100) + '%';
             }
-
-            const allChunks = new Uint8Array(loaded);
+            const data = new Uint8Array(loaded);
             let pos = 0;
-            for(let c of chunks) { allChunks.set(c, pos); pos += c.length; }
-            
-            return JSON.parse(new TextDecoder("utf-8").decode(allChunks));
-        } catch (e) {
-            console.error(`Gagal load part ${index}`, e);
-            return [];
-        }
+            for(let c of chunks) { data.set(c, pos); pos += c.length; }
+            return JSON.parse(new TextDecoder().decode(data));
+        } catch (e) { return []; }
     }
 
     async function init() {
-        const promises = [];
-        for(let i=1; i<=TOTAL_FILES; i++) {
-            promises.push(loadPart(i));
-        }
-
-        const results = await Promise.all(promises);
-        masterDb = results.flat();
-
-        statusText.innerText = `Database Ready: ${masterDb.length} Kelas Dimuat`;
+        const parts = [];
+        for(let i=1; i<=TOTAL_FILES; i++) parts.push(loadPart(i));
+        const res = await Promise.all(parts);
+        masterDb = res.flat();
+        document.getElementById('status-text').innerText = `Database: ${masterDb.length} Kelas Terdaftar`;
         searchInput.disabled = false;
-        searchInput.placeholder = "Masukkan nama lengkap...";
-        document.getElementById('results').innerHTML = '<div class="empty">Siap! Ketik namamu di kolom pencarian.</div>';
+        searchBtn.disabled = false;
+        searchInput.placeholder = "Masukkan Nama atau NIM...";
+        resultsDiv.innerHTML = '<div class="empty">Silakan masukkan kueri pencarian.</div>';
     }
 
-    searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase().trim();
-        if (query.length < 3) return;
+    function performSearch() {
+        const query = searchInput.value.toLowerCase().trim();
+        if (query.length < 3) {
+            resultsDiv.innerHTML = '<div class="empty">Ketik minimal 3 huruf.</div>';
+            totalCountLabel.style.display = 'none';
+            return;
+        }
 
-        let matches = [];
-        masterDb.forEach(item => {
-            if (item.MahasiswaPeserta.some(m => m.Nama.toLowerCase().includes(query))) {
-                item.Jadwal.forEach(jStr => {
-                    const [dt, room] = jStr.split(' di ');
-                    const [h, w] = dt.split(' ');
-                    matches.push({ h, w, n: item.Nama, k: item.Kode, p: item.KelasParalel, l: room || 'Disesuaikan' });
+        resultsDiv.innerHTML = '<div class="empty">Sedang memproses data...</div>';
+        totalCountLabel.style.display = 'none';
+
+        setTimeout(() => {
+            let studentMap = {};
+
+            masterDb.forEach(item => {
+                const matches = item.MahasiswaPeserta.filter(m => 
+                    m.Nama.toLowerCase().includes(query) || 
+                    m.Nim.toLowerCase().includes(query)
+                );
+
+                matches.forEach(stu => {
+                    if (!studentMap[stu.Nim]) {
+                        studentMap[stu.Nim] = { info: stu, classes: [] };
+                    }
+                    item.Jadwal.forEach(jStr => {
+                        const [dt, room] = jStr.split(' di ');
+                        const [h, w] = dt.split(' ');
+                        studentMap[stu.Nim].classes.push({
+                            h, w, n: item.Nama, k: item.Kode, p: item.KelasParalel, l: room || '-'
+                        });
+                    });
                 });
+            });
+
+            const totalStudents = Object.keys(studentMap).length;
+            
+            // Update & Show Total Count
+            if (totalStudents > 0) {
+                totalCountLabel.innerText = `Total: ${totalStudents} Mahasiswa Ditemukan`;
+                totalCountLabel.style.display = 'inline-block';
+            } else {
+                totalCountLabel.style.display = 'none';
             }
-        });
 
-        matches.sort((a, b) => hariUrut.indexOf(a.h) - hariUrut.indexOf(b.h) || a.w.localeCompare(b.w));
+            renderGrouped(studentMap);
+        }, 50);
+    }
 
-        render(matches);
-    });
+    searchBtn.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(); });
 
-    function render(data) {
+    function renderGrouped(map) {
+        const students = Object.values(map);
+        if (students.length === 0) {
+            resultsDiv.innerHTML = '<div class="empty">Tidak ada hasil yang cocok.</div>';
+            return;
+        }
+
         let html = '';
-        let currentDay = '';
-        data.forEach(item => {
-            if (item.h !== currentDay) {
-                currentDay = item.h;
-                html += `<div class="day-header">${currentDay}</div>`;
-            }
+        students.forEach(stu => {
+            stu.classes.sort((a, b) => hariUrut.indexOf(a.h) - hariUrut.indexOf(b.h) || a.w.localeCompare(b.w));
+
             html += `
-                <div class="schedule-card">
-                    <div class="time-box">${item.w}</div>
-                    <div class="course-info">
-                        <div class="name">${item.n}</div>
-                        <div class="meta">🆔 ${item.k} | Paralel ${item.p} | 📍 ${item.l}</div>
+                <div class="student-section">
+                    <div class="student-header">
+                        <div class="student-name">${stu.info.Nama}</div>
+                        <div class="student-nim">NIM: ${stu.info.Nim}</div>
                     </div>
-                </div>`;
+            `;
+
+            let currentDay = '';
+            stu.classes.forEach(c => {
+                if (c.h !== currentDay) {
+                    currentDay = c.h;
+                    html += `<div class="day-header">${currentDay}</div>`;
+                }
+                html += `
+                    <div class="schedule-card">
+                        <div class="time-box">${c.w}</div>
+                        <div class="course-info">
+                            <div class="name">${c.n}</div>
+                            <div class="meta">🆔 ${c.k} | Paralel ${c.p} | 📍 ${c.l}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
         });
-        document.getElementById('results').innerHTML = html || '<div class="empty">Nama tidak ditemukan.</div>';
+        resultsDiv.innerHTML = html;
     }
 
     init();
