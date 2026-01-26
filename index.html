@@ -1,186 +1,217 @@
-<!doctype html>
-<html lang="id" class="h-full" >
+<!DOCTYPE html>
+<html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Rafael Atantya</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          keyframes: {
-            gradient: {
-              '0%, 100%': { 'background-position': '0% 50%' },
-              '50%': { 'background-position': '100% 50%' }
-            }
-          },
-          animation: {
-            gradient: 'gradient 10s ease infinite',
-            gradientSlow: 'gradient 15s ease infinite'
-          }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Kuliah Cepat</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #22c55e;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
         }
-      }
-    }
-  </script>
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container { width: 100%; max-width: 650px; }
+
+        header { text-align: center; margin-bottom: 30px; }
+
+        h1 { color: var(--accent); margin-bottom: 5px; }
+
+        /* Progress Bar Styles */
+        #loading-container {
+            width: 100%;
+            background: #334155;
+            border-radius: 10px;
+            height: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+            display: block;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.1s;
+        }
+
+        .status { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* Search Box */
+        .search-box { position: sticky; top: 10px; z-index: 100; margin-bottom: 25px; }
+
+        input {
+            width: 100%; padding: 15px; border-radius: 12px; border: 2px solid #334155;
+            background: var(--card); color: white; font-size: 1rem; outline: none; box-sizing: border-box;
+        }
+
+        input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        input:focus { border-color: var(--accent); }
+
+        /* Results */
+        .schedule-item {
+            background: var(--card); padding: 16px; border-radius: 12px; margin-bottom: 12px;
+            border-left: 4px solid var(--accent);
+        }
+
+        .day-time { display: flex; justify-content: space-between; font-weight: bold; color: var(--accent); font-size: 0.9rem; }
+
+        .subject-name { font-size: 1.1rem; font-weight: 600; margin: 5px 0; }
+
+        .meta-info { font-size: 0.85rem; color: var(--text-muted); }
+
+        .day-group { background: #334155; padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; margin: 15px 0 10px 0; display: inline-block; }
+
+        .empty-state { text-align: center; margin-top: 50px; color: var(--text-muted); }
+    </style>
 </head>
-<body class="min-h-dvh w-full bg-zinc-900 text-white">
-  <div class="fixed inset-0 -z-20 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 bg-[length:400%_400%] animate-gradient"></div>
-  <div class="fixed inset-0 -z-10 opacity-30 blur-2xl bg-gradient-to-br from-indigo-500 via-sky-500 to-emerald-400 bg-[length:400%_400%] animate-gradientSlow"></div>
+<body>
 
-  <main class="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12 lg:py-16">
-    <section class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/10 backdrop-blur p-6 sm:p-8 lg:p-10">
-      <div class="flex flex-col md:flex-row md:items-center gap-6">
-        <div class="relative size-24 sm:size-28 md:size-32 rounded-full ring-4 ring-white/20 overflow-hidden shrink-0">
-          <img src="https://raw.githubusercontent.com/rafaelatantya/Stirling_M0403241108_RafaelAtantya/refs/heads/main/u1c2DSC_7956.jpg" alt="Rafael Atantya avatar" class="h-full w-full object-cover" />
-          <div class="absolute inset-0 mix-blend-overlay "></div>
+<div class="container">
+    <header>
+        <h1>📅 Jadwal Kuliahku</h1>
+        <div id="loading-info" class="status">Menyiapkan unduhan...</div>
+        <div id="loading-container">
+            <div id="progress-bar"></div>
         </div>
-        <div class="flex-1">
-          <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white">Rafael Atantya</h1>
-          <p class="mt-2 text-zinc-200 text-base sm:text-lg flex items-center gap-2">
-            <span class="inline-flex items-center gap-2">
-              <span class="inline-block size-2 rounded-full bg-emerald-300 animate-pulse"></span>
-              Student • Musician • Investor
-            </span>
-          </p>
-          <div class="mt-4 flex flex-wrap items-center gap-2 sm:gap-3 text-sm">
-            <a href="mailto:rafaelatantya@pm.me" class="inline-flex items-center gap-2 rounded-full border border-white/40 px-3 py-1.5 hover:bg-white/10 text-white">
-              <i data-lucide="mail" class="size-4"></i> rafaelatantya@pm.me
-            </a>
-            <button id="copy-email" class="inline-flex items-center gap-2 rounded-full border border-white/40 px-3 py-1.5 hover:bg-white/10 text-white">
-              <i data-lucide="copy" class="size-4"></i> <span class="copy-email-text">Copy email</span>
-            </button>
-            <a href="https://open.spotify.com/artist/56xwxDsa3gzQQosMg2qtne" target="_blank" rel="noreferrer" class="inline-flex items-center gap-2 rounded-full border border-white/40 px-3 py-1.5 hover:bg-white/10 text-white">
-              <i data-lucide="globe" class="size-4"></i> Spotify
-            </a>
-          </div>
-        </div>
-      </div>
-    </section>
+    </header>
 
-    <section class="mt-6">
-      <div class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/10 backdrop-blur p-4 sm:p-5">
-        <button id="bio-toggle" class="w-full text-left flex items-center justify-between gap-4 text-white">
-          <div>
-            <h2 class="text-lg sm:text-xl font-semibold text-white">Autobiografi</h2>
-            <p class="text-sm text-zinc-200">Sedikit hal mengenai website ini.</p>
-          </div>
-          <i data-lucide="chevron-down" class="size-5 transition-transform" id="bio-chevron"></i>
-        </button>
-        <div id="bio-content" class="grid transition-all duration-300 ease-out grid-rows-[0fr] overflow-hidden">
-          <div class="min-h-0">
-            <p class="mt-4 text-zinc-100 leading-relaxed">
-              Halo! Saya Rafael Atantya, M03-108, Proxy Stirling, ini adalah tugas Pekan Ilkomerz IPB University.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <div class="search-box">
+        <input type="text" id="search" placeholder="Tunggu sebentar..." disabled>
+    </div>
 
-    <section class="mt-6">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-        <a href="https://open.spotify.com/artist/56xwxDsa3gzQQosMg2qtne" target="_blank" rel="noreferrer" class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/10 backdrop-blur p-4 sm:p-5 text-white">
-          <div class="flex items-start gap-3">
-            <span class="p-2 rounded-xl bg-white/10 border border-white/40">
-              <i data-lucide="globe" class="size-5"></i>
-            </span>
-            <div class="flex-1">
-              <div class="flex items-center gap-2">
-                <h3 class="font-semibold text-white">Spotify</h3>
-                <i data-lucide="external-link" class="size-4 opacity-60"></i>
-              </div>
-              <p class="text-sm text-zinc-200">Temukan release terbaru saya di sini.</p>
-            </div>
-          </div>
-        </a>
-        <a href="https://github.com/rafaelatantya" target="_blank" rel="noreferrer" class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/10 backdrop-blur p-4 sm:p-5 text-white">
-          <div class="flex items-start gap-3">
-            <span class="p-2 rounded-xl bg-white/10 border border-white/40">
-              <i data-lucide="github" class="size-5"></i>
-            </span>
-            <div class="flex-1">
-              <div class="flex items-center gap-2">
-                <h3 class="font-semibold text-white">GitHub</h3>
-                <i data-lucide="external-link" class="size-4 opacity-60"></i>
-              </div>
-              <p class="text-sm text-zinc-200">Ayo mutualan Github!</p>
-            </div>
-          </div>
-        </a>
-        <a href="https://www.linkedin.com/in/rafaelatantya/" target="_blank" rel="noreferrer" class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/10 backdrop-blur p-4 sm:p-5 text-white">
-          <div class="flex items-start gap-3">
-            <span class="p-2 rounded-xl bg-white/10 border border-white/40">
-              <i data-lucide="linkedin" class="size-5"></i>
-            </span>
-            <div class="flex-1">
-              <div class="flex items-center gap-2">
-                <h3 class="font-semibold text-white">LinkedIn</h3>
-                <i data-lucide="external-link" class="size-4 opacity-60"></i>
-              </div>
-              <p class="text-sm text-zinc-200">Ayo mutualan LinkedIn!</p>
-            </div>
-          </div>
-        </a>
-        <a href="https://instagram.com/atantya" target="_blank" rel="noreferrer" class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/10 backdrop-blur p-4 sm:p-5 text-white">
-          <div class="flex items-start gap-3">
-            <span class="p-2 rounded-xl bg-white/10 border border-white/40">
-              <i data-lucide="instagram" class="size-5"></i>
-            </span>
-            <div class="flex-1">
-              <div class="flex items-center gap-2">
-                <h3 class="font-semibold text-white">Instagram</h3>
-                <i data-lucide="external-link" class="size-4 opacity-60"></i>
-              </div>
-              <p class="text-sm text-zinc-200">Akun Instagram saya khusus untuk musik.</p>
-            </div>
-          </div>
-        </a>
-      </div>
-    </section>
+    <div id="results">
+        <div class="empty-state">Database sedang dimuat...</div>
+    </div>
+</div>
 
-    <section class="mt-6">
-      <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-white/10 backdrop-blur p-4 sm:p-5">
-        <!-- <div class="aspect-video w-full">
-          <iframe src="https://www.tiktok.com/@atantya" frameborder="0" allowfullscreen class="w-full h-full rounded-xl"></iframe>
-        </div> -->
-        <blockquote class="tiktok-embed" cite="https://www.tiktok.com/@atantya" data-unique-id="atantya" data-embed-type="creator" style="max-width: 780px; min-width: 288px;" > <section> <a target="_blank" href="https://www.tiktok.com/@atantya?refer=creator_embed">@atantya</a> </section> </blockquote> <script async src="https://www.tiktok.com/embed.js"></script>
-      </div>
-    </section>
-    
-    <footer class="mt-8 text-center text-sm text-zinc-200">
-      © <span id="year"></span> Rafael Atantya. 2025.
-    </footer>
-  </main>
+<script>
+    let scheduleDb = [];
+    const searchInput = document.getElementById('search');
+    const resultsDiv = document.getElementById('results');
+    const progressBar = document.getElementById('progress-bar');
+    const loadingInfo = document.getElementById('loading-info');
+    const loadingContainer = document.getElementById('loading-container');
+    const hariUrut = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
 
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script>
-    lucide.createIcons();
-    document.getElementById('year').textContent = new Date().getFullYear();
-    const copyBtn = document.getElementById('copy-email');
-    const copyEmailText = document.querySelector('.copy-email-text');
-    copyBtn?.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText('rafaelatantya@pm.me');
-        copyEmailText.textContent = 'Copied';
-        const icon = copyBtn.querySelector('[data-lucide]');
-        if (icon) icon.replaceWith(lucide.createElement('check', { class: 'size-4' }));
-        setTimeout(() => {
-          copyEmailText.textContent = 'Copy email';
-          copyBtn.querySelector('.size-4')?.replaceWith(lucide.createElement('copy', { class: 'size-4' }));
-        }, 1500);
-      } catch (e) { console.warn('Copy failed', e); }
-    });
-    const bioToggle = document.getElementById('bio-toggle');
-    const bioChevron = document.getElementById('bio-chevron');
-    const bioContent = document.getElementById('bio-content');
-    let bioOpen = false;
-    function setBio(open){
-      bioOpen = !!open;
-      bioContent.style.gridTemplateRows = open ? '1fr' : '0fr';
-      bioChevron?.classList.toggle('rotate-180', open);
+    async function loadDatabase() {
+        try {
+            const response = await fetch('db.json');
+            
+            // Mengambil total ukuran file dari header
+            const contentLength = response.headers.get('content-length');
+            const total = parseInt(contentLength, 10);
+            
+            if (!contentLength) {
+                loadingInfo.innerText = "Memuat data (ukuran file terkompresi tidak diketahui)...";
+            }
+
+            const reader = response.body.getReader();
+            let loaded = 0;
+            let chunks = [];
+
+            while(true) {
+                const {done, value} = await reader.read();
+                if (done) break;
+
+                chunks.push(value);
+                loaded += value.length;
+
+                // Update Progress Bar
+                if (total) {
+                    const percent = Math.round((loaded / total) * 100);
+                    progressBar.style.width = percent + '%';
+                    loadingInfo.innerText = `Mengunduh: ${percent}% (${(loaded / 1024 / 1024).toFixed(2)} MB)`;
+                } else {
+                    loadingInfo.innerText = `Mengunduh: ${(loaded / 1024).toFixed(0)} KB...`;
+                }
+            }
+
+            // Gabungkan semua chunk data dan parse JSON
+            const allChunks = new Uint8Array(loaded);
+            let position = 0;
+            for (let chunk of chunks) {
+                allChunks.set(chunk, position);
+                position += chunk.length;
+            }
+
+            const decodedData = new TextDecoder("utf-8").decode(allChunks);
+            scheduleDb = JSON.parse(decodedData);
+
+            // Berhasil Load Full
+            loadingContainer.style.display = 'none';
+            loadingInfo.innerText = `Database Siap: ${scheduleDb.length} Kelas (${(loaded / 1024 / 1024).toFixed(2)} MB)`;
+            searchInput.disabled = false;
+            searchInput.placeholder = "Ketik namamu di sini...";
+            resultsDiv.innerHTML = '<div class="empty-state">Silakan cari namamu!</div>';
+
+        } catch (err) {
+            loadingInfo.innerText = "Gagal memuat database!";
+            console.error(err);
+        }
     }
-    bioToggle?.addEventListener('click', () => setBio(!bioOpen));
-  </script>
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        if (query.length < 3) {
+            resultsDiv.innerHTML = '<div class="empty-state">Ketik minimal 3 huruf...</div>';
+            return;
+        }
+
+        let matches = [];
+        scheduleDb.forEach(item => {
+            if (item.m.some(mhs => mhs.includes(query))) {
+                item.j.forEach(jadwalStr => {
+                    const [dayTime, room] = jadwalStr.split(' di ');
+                    const [hari, waktu] = dayTime.split(' ');
+                    matches.push({ hari, waktu, nama: item.n, kode: item.k, lokasi: room || 'Disesuaikan' });
+                });
+            }
+        });
+
+        matches.sort((a, b) => hariUrut.indexOf(a.hari) - hariUrut.indexOf(b.hari) || a.waktu.localeCompare(b.waktu));
+
+        render(matches);
+    });
+
+    function render(data) {
+        if (data.length === 0) {
+            resultsDiv.innerHTML = '<div class="empty-state">Nama tidak ditemukan.</div>';
+            return;
+        }
+
+        let html = '';
+        let currentDay = '';
+        data.forEach(item => {
+            if (item.hari !== currentDay) {
+                currentDay = item.hari;
+                html += `<div class="day-group">${currentDay.toUpperCase()}</div>`;
+            }
+            html += `
+                <div class="schedule-item">
+                    <div class="day-time"><span>${item.hari}</span><span>${item.waktu}</span></div>
+                    <div class="subject-name">${item.nama}</div>
+                    <div class="meta-info">🆔 ${item.kode} | 📍 ${item.lokasi}</div>
+                </div>`;
+        });
+        resultsDiv.innerHTML = html;
+    }
+
+    loadDatabase();
+</script>
+
 </body>
 </html>
