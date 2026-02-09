@@ -1,438 +1,472 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPB Course Explorer - Beach Vibes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IPB Course Explorer • Island Edition</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     
     <style>
-        body { font-family: 'Quicksand', sans-serif; }
-        .progress-bar { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        
-        #loadingOverlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #fff7ed; /* Orange-50 */
-            z-index: 50;
-            display: flex; justify-content: center; align-items: center; flex-direction: column;
+        /* --- THEME CONFIG --- */
+        :root {
+            /* WARNA PASIR REALISTIS (Cream/Coklat Muda) - Fixed Color */
+            --sand-main: #e6c288;
+            --sand-dark: #cba366;
+            
+            /* Warna Kartu (Harus Gelap agar Adaptive Text bekerja sempurna) */
+            --card-base: #0f172a; /* Deep Ocean Blue */
+            
+            /* Warna Aksen */
+            --accent-primary: #22d3ee; /* Cyan Neon */
+            --accent-secondary: #f97316; /* Orange */
+            
+            /* Glass border */
+            --glass-border: rgba(230, 194, 136, 0.3);
         }
-        
-        body.loading { overflow: hidden; }
 
-        .desc-content p { margin-bottom: 0.5rem; }
-        .desc-content ul { list-style-type: disc; margin-left: 1.5rem; }
-        
-        @keyframes wave {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(15deg); }
+        /* Mode Siang/Malam hanya mengubah Background Dunia & Langit */
+        :root[data-theme="light"] {
+            --bg-world: #fff7ed;
+            --sky-gradient: linear-gradient(to bottom, #bae6fd, #fff7ed);
+            --sun-color: #fbbf24;
         }
-        .waving-icon { display: inline-block; animation: wave 2s infinite; }
+        :root[data-theme="dark"] {
+            --bg-world: #020617; 
+            --sky-gradient: linear-gradient(to bottom, #0f172a, #020617);
+            --sun-color: #fcd34d;
+        }
 
-        /* Toggle Switch Style */
-        .toggle-checkbox:checked {
-            right: 0;
-            border-color: #06b6d4;
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background-color: var(--bg-world); 
+            color: #ffffff;
+            overflow-x: hidden; 
+            transition: background-color 0.8s ease;
         }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: #06b6d4;
+        .font-tech { font-family: 'Space Grotesk', sans-serif; }
+
+        /* --- THE MAGIC CARD (ISLAND X DUNE HYBRID) --- */
+        .island-card {
+            background-color: var(--card-base); /* Gelap seperti dasar laut */
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden; 
+            isolation: isolate; /* Kunci untuk blend mode */
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3);
         }
+        
+        .island-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -10px rgba(6, 182, 212, 0.2);
+            border-color: var(--accent-primary);
+        }
+
+        /* --- ADAPTIVE TEXT LAYER --- */
+        .content-layer {
+            position: relative;
+            z-index: 20; 
+            color: #ffffff; /* Teks Putih */
+            mix-blend-mode: difference; /* JIKA KENA PASIR (TERANG), TEKS JADI GELAP */
+        }
+
+        /* --- FALLING SAND (UNEVEN FLOW) --- */
+        .falling-sand {
+            position: absolute;
+            inset: -50% 0 0 0;
+            height: 200%;
+            width: 100%;
+            z-index: 1;
+            pointer-events: none;
+            /* Texture Noise untuk butiran */
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.5'/%3E%3C/svg%3E");
+            background-color: var(--sand-dark);
+            /* Masking Uneven */
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+            opacity: 0;
+            animation: sandPour 12s infinite linear;
+        }
+
+        /* --- RISING SAND PILE (UNEVEN / BERGELOMBANG) --- */
+        .sand-pile {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 25%;
+            background: var(--sand-main);
+            z-index: 5;
+            /* Tekstur Butiran */
+            background-image: 
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.2'/%3E%3C/svg%3E"),
+                linear-gradient(to bottom, var(--sand-main), var(--sand-dark));
+            animation: pileRise 12s infinite ease-in-out;
+        }
+
+        /* UNEVEN TOP EDGE (Lengkungan Pasir) */
+        .sand-pile::before, .sand-pile::after {
+            content: "";
+            position: absolute;
+            top: -15px; 
+            left: 0; width: 200%; height: 35px;
+            background: inherit;
+            border-radius: 50%;
+            animation: waveRotate 8s infinite linear;
+        }
+        .sand-pile::after {
+            top: -20px; width: 220%; opacity: 0.8;
+            animation-duration: 12s; animation-direction: reverse; left: -50%;
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes sandPour {
+            0% { transform: translateY(-20%); opacity: 0; }
+            10% { opacity: 0.5; } 
+            60% { transform: translateY(10%); opacity: 0.5; } 
+            70% { opacity: 0; } 
+            100% { transform: translateY(20%); opacity: 0; }
+        }
+        @keyframes pileRise {
+            0% { height: 25%; }
+            10% { height: 25%; }
+            60% { height: 80%; } /* Naik Tinggi (Uneven) */
+            75% { height: 80%; } 
+            90% { height: 25%; } /* Turun */
+            100% { height: 25%; }
+        }
+        @keyframes waveRotate {
+            0% { transform: translateX(0) rotate(0deg); }
+            50% { transform: translateX(-20%) rotate(2deg); }
+            100% { transform: translateX(-50%) rotate(0deg); }
+        }
+
+        /* --- SCENERY & LIQUID --- */
+        .scenery-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -10; overflow: hidden; background: var(--sky-gradient); transition: background 1s; }
+        .celestial-body {
+            position: absolute; top: 50px; right: 50px; width: 80px; height: 80px;
+            border-radius: 50%; background: var(--sun-color);
+            box-shadow: 0 0 60px var(--sun-color); transition: all 1s;
+        }
+        .cloud { position: absolute; background: white; border-radius: 50px; opacity: 0.8; animation: floatCloud 60s linear infinite; filter: blur(5px); }
+        @keyframes floatCloud { from { transform: translateX(-200px); } to { transform: translateX(100vw); } }
+        
+        .wave-layer { position: absolute; bottom: 0; width: 200%; height: 150px; background: rgba(6, 182, 212, 0.2); mask: url("data:image/svg+xml,%3Csvg viewBox='0 0 800 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 50 Q 200 100 400 50 T 800 50 V 100 H 0 Z' fill='black'/%3E%3C/svg%3E"); -webkit-mask: url("data:image/svg+xml,%3Csvg viewBox='0 0 800 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 50 Q 200 100 400 50 T 800 50 V 100 H 0 Z' fill='black'/%3E%3C/svg%3E"); -webkit-mask-size: 50% 100%; animation: waveSlide 20s linear infinite; }
+        .wave-layer.front { height: 120px; background: rgba(6, 182, 212, 0.4); animation-duration: 15s; animation-direction: reverse; bottom: -10px; }
+        @keyframes waveSlide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        /* Liquid FX */
+        #liquidLayer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; display: none; overflow: hidden; }
+        .liquid-blob { position: absolute; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), #3b82f6); transform: translate(-50%, -50%) scale(0); opacity: 1; }
+        .animate-liquid-fill { animation: liquidFill 0.8s cubic-bezier(0.7, 0, 0.3, 1) forwards; }
+        @keyframes liquidFill { 0% { transform: translate(-50%, -50%) scale(0); } 100% { transform: translate(-50%, -50%) scale(4); border-radius: 50%; } }
+
+        /* --- UI ELEMENTS --- */
+        .chart-opt-btn { font-size: 10px; padding: 4px 10px; border-radius: 20px; font-weight: bold; border: 1px solid var(--glass-border); color: #94a3b8; transition: all 0.2s; background: rgba(0,0,0,0.3); }
+        .chart-opt-btn:hover, .chart-opt-btn.active { background: var(--accent-primary); color: black; border-color: transparent; }
+        
+        .progress-bar-container { width: 100%; background: rgba(255,255,255,0.1); border-radius: 999px; height: 16px; position: relative; overflow: visible; border: 1px solid var(--accent-primary); }
+        .progress-bar-fill { height: 100%; background: var(--accent-primary); border-radius: 999px; width: 0%; position: relative; transition: width 0.3s; box-shadow: 0 0 10px var(--accent-primary); }
+        .surfer-icon { position: absolute; right: -15px; top: -18px; font-size: 32px; animation: surfBob 1s infinite alternate ease-in-out; }
+        @keyframes surfBob { from { transform: translateY(0) rotate(5deg); } to { transform: translateY(-5px) rotate(-5deg); } }
+
+        .animate-enter { animation: enter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0; transform: translateY(30px); }
+        @keyframes enter { to { opacity: 1; transform: translateY(0); } }
+        
+        .toggle-checkbox:checked { right: 0; border-color: var(--accent-primary); }
+        .toggle-checkbox:checked + .toggle-label { background-color: var(--accent-primary); }
+        
+        /* Glass Input */
+        .glass-input { background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); color: white; }
+        .glass-input:focus { border-color: var(--accent-primary); outline: none; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--sand-main); }
     </style>
 </head>
-<body class="bg-orange-50 min-h-screen text-slate-700 loading selection:bg-cyan-200 selection:text-cyan-900">
+<body class="selection:bg-cyan-500/30 selection:text-cyan-200">
 
-    <div id="loadingOverlay">
-        <div class="w-full max-w-lg p-8 relative">
-            <div class="absolute -top-10 -right-10 text-6xl text-yellow-400 animate-spin-slow opacity-80">
-                <i class="fa-solid fa-sun fa-spin" style="animation-duration: 12s;"></i>
-            </div>
+    <div class="scenery-container">
+        <div class="celestial-body"></div>
+        <div class="cloud" style="width: 200px; height: 60px; top: 10%; left: -200px;"></div>
+        <div class="cloud" style="width: 300px; height: 80px; top: 20%; left: -400px; animation-duration: 80s;"></div>
+        <div class="wave-layer"></div>
+        <div class="wave-layer front"></div>
+    </div>
 
-            <div class="text-center mb-8 z-10 relative">
-                <h2 class="text-3xl font-bold text-cyan-700 mb-2" id="loadTitle">Menyelami Data... 🏄‍♂️</h2>
-                <p class="text-slate-500 text-sm font-semibold" id="loadDesc">Mengumpulkan ombak data dari server...</p>
-            </div>
+    <div id="liquidLayer"></div>
 
-            <div class="flex justify-between items-end mb-2">
-                <div class="text-cyan-600 text-xs font-bold tracking-wider uppercase" id="loadSpeedLabel">Kecepatan Ombak</div>
-                <div id="downloadSpeed" class="text-3xl font-bold text-cyan-600">0 KB/s</div>
-            </div>
+    <div id="initLoader" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 bg-[#0f172a]/95 backdrop-blur-xl transition-opacity duration-700">
+        <div class="w-full max-w-lg text-center relative z-10">
+            <h2 class="text-4xl md:text-5xl font-black font-tech tracking-tighter mb-4 text-white drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]">IPB <span style="color: var(--accent-primary)">COURSE ISLAND</span></h2>
+            <p id="loadStatus" class="text-sm font-bold tracking-widest uppercase mb-10 text-gray-400 animate-pulse">Menyiapkan Ombak...</p>
             
-            <div class="w-full bg-orange-200 rounded-full h-6 mb-4 overflow-visible relative shadow-inner">
-                <div id="progressBar" class="bg-gradient-to-r from-cyan-400 to-blue-500 h-6 rounded-full progress-bar relative flex items-center justify-end pr-2" style="width: 0%">
-                    <span class="absolute -right-3 -top-3 text-2xl filter drop-shadow-md">🏄</span>
-                </div>
+            <div class="flex justify-between items-end mb-2 px-2">
+                <div class="text-[var(--accent-primary)] text-xs font-bold tracking-wider uppercase">KECEPATAN SELANCAR</div>
+                <div id="downloadSpeed" class="text-2xl font-bold font-mono text-white">0 KB/s</div>
             </div>
-
-            <div class="flex justify-between text-xs text-slate-500 font-bold mb-8">
+            <div class="progress-bar-container">
+                <div id="initProgressBar" class="progress-bar-fill"><div class="surfer-icon">🏄</div></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500 font-bold mt-2 px-2">
                 <span id="filesCount">File: 0/15</span>
                 <span id="percentText">0%</span>
-            </div>
-
-            <div class="grid grid-cols-3 gap-3 text-center">
-                <div class="bg-white/60 p-3 rounded-2xl shadow-sm border border-orange-100 backdrop-blur-sm">
-                    <div class="text-[10px] text-orange-400 uppercase font-bold" id="statSize">Ukuran Pasir</div>
-                    <div id="dataSize" class="text-sm font-bold text-slate-700">0 MB</div>
-                </div>
-                <div class="bg-white/60 p-3 rounded-2xl shadow-sm border border-orange-100 backdrop-blur-sm">
-                    <div class="text-[10px] text-orange-400 uppercase font-bold" id="statTime">Est. Waktu</div>
-                    <div id="etr" class="text-sm font-bold text-slate-700">--</div>
-                </div>
-                <div class="bg-white/60 p-3 rounded-2xl shadow-sm border border-orange-100 backdrop-blur-sm">
-                    <div class="text-[10px] text-orange-400 uppercase font-bold">Status</div>
-                    <div id="currentStatus" class="text-sm font-bold text-cyan-600">Persiapan...</div>
-                </div>
             </div>
         </div>
     </div>
 
-    <div id="mainApp" class="hidden max-w-7xl mx-auto p-4 md:p-8 pb-24">
+    <div id="mainApp" class="hidden opacity-0 transition-opacity duration-1000 min-h-screen flex flex-col">
         
-        <div class="flex justify-end mb-[-40px] relative z-50">
-            <div class="flex items-center gap-2 bg-white/80 px-3 py-1.5 rounded-full shadow-sm border border-orange-100 backdrop-blur">
-                <span class="text-xs font-bold text-slate-500">ID</span>
-                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="toggle" id="langToggle" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-300"/>
-                    <label for="langToggle" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-300 cursor-pointer"></label>
-                </div>
-                <span class="text-xs font-bold text-slate-500">EN</span>
-            </div>
-        </div>
-
-        <div class="mb-8 text-center pt-6">
-            <div class="inline-block p-3 bg-white rounded-full shadow-md mb-4">
-                <i class="fa-solid fa-umbrella-beach text-4xl text-orange-400"></i>
-            </div>
-            <h1 class="text-4xl md:text-5xl font-extrabold text-cyan-800 tracking-tight drop-shadow-sm">IPB Course Island</h1>
-            <p class="text-cyan-600 mt-2 text-base font-semibold">
-                <span data-i18n="headerSubtitle">Jelajahi</span> <span id="totalDataBadge" class="bg-cyan-100 text-cyan-700 px-2 py-1 rounded-lg">0</span> <span data-i18n="headerCourses">mata kuliah di bawah sinar matahari ☀️</span>
-            </p>
-        </div>
-
-        <div class="bg-white/80 backdrop-blur-md p-5 rounded-[2rem] shadow-xl border border-orange-100 sticky top-6 z-40 transition-all duration-300 hover:shadow-2xl hover:bg-white">
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                
-                <div class="md:col-span-3">
-                    <label class="block text-xs font-bold text-orange-400 mb-2 ml-2 uppercase tracking-wide" data-i18n="lblMode">🔍 Mode Pencarian</label>
-                    <div class="relative">
-                        <select id="searchMode" onchange="updatePlaceholder()" 
-                            class="w-full border-2 border-orange-100 rounded-2xl pl-4 pr-10 py-3 bg-orange-50 focus:bg-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 text-slate-700 appearance-none font-bold cursor-pointer transition">
-                            <option value="ALL">✨ Smart Search (Semua)</option>
-                            <option value="NAME">🔤 Nama Matkul</option>
-                            <option value="CODE">🔖 Kode Matkul</option>
-                            <option value="DESC">📝 Deskripsi / Silabus</option>
-                            <option value="ID_MK">🆔 ID Matkul</option>
-                            <option value="ID_JADWAL">📅 ID Jadwal</option>
-                        </select>
-                        <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-orange-300 pointer-events-none"></i>
+        <div class="sticky top-0 z-30 pt-4 px-4 pb-2">
+            <div class="max-w-7xl mx-auto bg-[#0f172a]/80 rounded-full px-6 py-3 shadow-lg border border-[var(--glass-border)] flex justify-between items-center backdrop-blur-md">
+                <div class="flex items-center gap-3 cursor-pointer group" onclick="window.location.reload()">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-[var(--accent-primary)] to-blue-600 flex items-center justify-center text-white shadow-lg group-hover:rotate-12 transition-transform">
+                        <i class="fa-solid fa-water"></i>
+                    </div>
+                    <div class="hidden sm:block">
+                        <h1 class="font-bold text-lg leading-none font-tech text-white">COURSE <span style="color: var(--accent-primary)">ISLAND</span></h1>
                     </div>
                 </div>
-
-                <div class="md:col-span-5">
-                    <label class="block text-xs font-bold text-orange-400 mb-2 ml-2 uppercase tracking-wide" data-i18n="lblKeyword">🌊 Kata Kunci</label>
-                    <div class="relative">
-                        <input type="text" id="searchInput" 
-                            placeholder="Mau cari apa hari ini?" 
-                            class="w-full border-2 border-orange-100 rounded-2xl px-5 py-3 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 text-slate-700 shadow-sm transition placeholder-slate-400 font-medium">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-full border border-white/10">
+                        <span class="text-[10px] font-bold text-gray-400">ID</span>
+                        <div class="relative inline-block w-8 align-middle select-none">
+                            <input type="checkbox" id="langToggle" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-2 appearance-none cursor-pointer border-slate-300"/>
+                            <label for="langToggle" class="toggle-label block overflow-hidden h-4 rounded-full bg-slate-500 cursor-pointer"></label>
+                        </div>
+                        <span class="text-[10px] font-bold text-gray-400">EN</span>
                     </div>
-                </div>
-
-                <div class="md:col-span-2">
-                    <label class="block text-xs font-bold text-orange-400 mb-2 ml-2 uppercase tracking-wide" data-i18n="lblLevel">🎓 Jenjang</label>
-                    <select id="strataSelect" class="w-full border-2 border-orange-100 rounded-2xl px-4 py-3 bg-orange-50 focus:bg-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-200 text-slate-700 cursor-pointer font-bold">
-                        <option value="ALL">Semua Jenjang</option>
-                    </select>
-                </div>
-
-                <div class="md:col-span-2 flex items-end">
-                    <button id="btnSearch" class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white py-3.5 rounded-2xl font-bold hover:from-cyan-600 hover:to-blue-600 transition shadow-lg hover:shadow-cyan-200 active:scale-95 flex items-center justify-center gap-2 text-lg">
-                        <i class="fa-solid fa-water"></i> <span data-i18n="btnSearch">CARI!</span>
+                    <button onclick="window.toggleTheme()" class="w-10 h-10 rounded-full bg-black/30 border border-white/10 text-white flex items-center justify-center hover:scale-110 transition shadow-sm">
+                        <i id="themeIcon" class="fa-solid fa-sun text-[var(--accent-secondary)]"></i>
                     </button>
                 </div>
             </div>
         </div>
 
-        <div id="resultsContainer" class="space-y-5 mt-8">
-            <div class="text-center text-slate-400 py-20 flex flex-col items-center">
-                <div class="text-6xl mb-4 opacity-30 waving-icon">🏝️</div>
-                <p class="font-medium text-lg" data-i18n="emptyState">Laut masih tenang. Masukkan kata kunci untuk membuat ombak!</p>
+        <div class="flex-shrink-0 px-4 py-10 lg:py-16 relative z-10">
+            <div class="max-w-4xl mx-auto text-center mb-10">
+                <h2 class="text-4xl md:text-6xl font-black mb-4 font-tech text-[var(--text-main)] drop-shadow-sm leading-tight animate-enter">
+                    <span data-i18n="headerSubtitle">Jelajahi</span> <span style="color: var(--accent-primary)">Kepulauan</span> Data
+                </h2>
+                <p class="text-[var(--text-main)] opacity-70 font-bold text-lg max-w-lg mx-auto animate-enter" style="animation-delay: 0.1s" data-i18n="headerDesc">
+                    Temukan <span id="totalDataBadge" class="bg-[var(--glass-border)] px-2 py-0.5 rounded text-[var(--accent-primary)] border border-[var(--glass-border)]">0</span> mata kuliah di lautan data IPB.
+                </p>
+            </div>
+
+            <div class="max-w-4xl mx-auto relative group animate-enter" style="animation-delay: 0.2s">
+                <div class="relative bg-[#0f172a]/80 backdrop-blur-md p-6 rounded-[2.5rem] border border-[var(--glass-border)] shadow-2xl">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                        <div class="md:col-span-3">
+                            <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-wider" data-i18n="lblMode">MODE</label>
+                            <div class="relative">
+                                <select id="searchMode" onchange="updatePlaceholder()" class="w-full glass-input rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer transition shadow-sm">
+                                    <option value="ALL">✨ Smart Search</option>
+                                    <option value="NAME">🔤 Nama</option>
+                                    <option value="CODE">🔖 Kode</option>
+                                    <option value="DESC">📝 Deskripsi</option>
+                                    <option value="ID_MK">🆔 ID Matkul</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-gray-500 text-xs pointer-events-none"></i>
+                            </div>
+                        </div>
+                        <div class="md:col-span-6">
+                            <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-wider" data-i18n="lblKeyword">KATA KUNCI</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-4 top-4 text-gray-500"></i>
+                                <input type="text" id="searchInput" class="w-full glass-input rounded-xl pl-10 pr-4 py-3 font-bold placeholder-gray-600 shadow-sm transition" placeholder="..." onkeydown="if(event.key === 'Enter') handleSearch()">
+                            </div>
+                        </div>
+                        <div class="md:col-span-3 flex items-end">
+                            <button id="searchBtn" onclick="handleSearch()" class="w-full bg-gradient-to-r from-[var(--accent-primary)] to-blue-500 text-white font-tech font-bold py-3.5 rounded-xl text-lg flex items-center justify-center gap-2 group/btn shadow-lg hover:shadow-[var(--accent-primary)]/50 transition-all active:scale-95">
+                                <span class="relative z-10" data-i18n="btnSearch">CARI</span> 
+                                <i class="fa-solid fa-water relative z-10 group-hover/btn:animate-bounce"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-white/10 flex items-center gap-3">
+                        <span class="text-[10px] font-bold text-gray-400 shrink-0" data-i18n="lblLevel">JENJANG:</span>
+                        <select id="strataSelect" class="bg-black/30 border border-white/10 rounded-lg px-3 py-1 text-xs text-white font-bold outline-none cursor-pointer">
+                            <option value="ALL">Semua</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
-        
-        <div class="text-center mt-12 mb-12">
-            <button id="loadMoreBtn" class="hidden bg-white border-2 border-orange-200 text-orange-500 px-8 py-3 rounded-full hover:bg-orange-50 shadow-md font-bold transition active:scale-95">
-                Tampilkan Lebih Banyak 🏴‍☠️
+
+        <div class="flex-1 px-4 pb-20 max-w-7xl mx-auto w-full">
+            <div id="resultsContainer" class="grid grid-cols-1 gap-6 w-full">
+                <div class="text-center py-20 opacity-60">
+                    <div class="text-8xl mb-6 animate-bounce" style="animation-duration: 3s">🏝️</div>
+                    <p class="font-tech text-xl text-[var(--text-main)]" data-i18n="emptyState">Pantai masih sepi. Mulai pencarian!</p>
+                </div>
+            </div>
+            <button id="loadMoreBtn" onclick="loadMore()" class="hidden w-full max-w-md mx-auto mt-12 py-4 bg-[#0f172a] rounded-2xl font-bold hover:bg-black/50 transition-all active:scale-95 shadow-lg tracking-widest uppercase text-sm flex items-center justify-center gap-3 font-tech text-[var(--accent-primary)] border border-[var(--glass-border)]">
+                <span data-i18n="btnMore">MUAT LEBIH BANYAK</span> <i class="fa-solid fa-chevron-down animate-bounce"></i>
             </button>
         </div>
 
-        <footer class="text-center py-8 border-t border-orange-200 mt-12">
-            <p class="text-slate-500 font-semibold text-sm">
-                Made with <i class="fa-solid fa-heart text-rose-400 animate-pulse mx-1"></i> by 
-                <a href="https://instagram.com/atantya" target="_blank" class="text-cyan-600 hover:text-cyan-800 font-bold decoration-wavy hover:underline underline-offset-4">@Atantya</a> 
-                & 
-                <a href="https://instagram.com/byatantya" target="_blank" class="text-cyan-600 hover:text-cyan-800 font-bold decoration-wavy hover:underline underline-offset-4">@ByAtantya</a>
+        <footer class="text-center py-8 border-t border-[var(--glass-border)] mt-auto bg-[#0f172a]/50 backdrop-blur-md">
+            <p class="text-gray-400 font-bold text-xs">
+                Made with <i class="fa-solid fa-heart text-rose-500 animate-pulse mx-1"></i> by 
+                <a href="https://instagram.com/atantya" class="text-[var(--accent-primary)] hover:underline">@Atantya</a> & 
+                <a href="https://instagram.com/projectsbyatantya" class="text-[var(--accent-primary)] hover:underline">@ProjectsByAtantya</a>
             </p>
         </footer>
-
     </div>
 
     <script>
-        // === KONFIGURASI ===
+        // === CONFIG ===
         const TOTAL_FILES = 15;
-        const FILE_PREFIX = 'api/merged_db/db_matkul_';
+        const FILE_PREFIX = 'api/ipb_course_island/db_matkul_';
         
-        // === GLOBAL STATE ===
+        // === STATE ===
         let ALL_DATA = [];
-        let totalBytesLoaded = 0;
-        let startTime = null;
         let searchResults = [];
         let currentPage = 1;
         const LIMIT = 20;
-        let currentLang = 'id'; // Default Bahasa Indonesia
+        let currentLang = 'id';
+        const chartStore = {}; 
 
-        // === KAMUS BAHASA (I18N) ===
+        // === I18N ===
         const i18n = {
             id: {
-                loadTitle: "Menyelami Data... 🏄‍♂️",
-                loadDesc: "Mengumpulkan ombak data dari server...",
-                loadSpeed: "Kecepatan Ombak",
-                statSize: "Ukuran Pasir",
-                statTime: "Est. Waktu",
-                statusInit: "Persiapan...",
-                statusMid: "Menerjang Ombak...",
-                statusEnd: "Sampai di Pantai!",
-                statusErr: "Terbawa Arus (Error)!",
-                
                 headerSubtitle: "Jelajahi",
-                headerCourses: "mata kuliah di bawah sinar matahari ☀️",
-                
-                lblMode: "🔍 Mode Pencarian",
-                lblKeyword: "🌊 Kata Kunci",
-                lblLevel: "🎓 Jenjang",
-                btnSearch: "CARI!",
-                
-                phAll: "Cari 'Biologi', 'KOM202', atau 'Statistika'...",
-                phName: "Cth: Biologi Umum, Algoritma...",
-                phCode: "Cth: BIO101, KOM120C...",
-                phDesc: "Cari kata dalam silabus...",
-                phIdMk: "Masukkan ID Matkul (cth: 203198)",
-                phIdJadwal: "Masukkan ID Jadwal (cth: 326777)",
-
-                optAll: "✨ Smart Search (Semua)",
-                optName: "🔤 Nama Matkul",
-                optCode: "🔖 Kode Matkul",
-                optDesc: "📝 Deskripsi / Silabus",
-                optIdMk: "🆔 ID Matkul",
-                optIdJadwal: "📅 ID Jadwal",
-                optLevelAll: "Semua Jenjang",
-
-                emptyState: "Laut masih tenang. Masukkan kata kunci untuk membuat ombak!",
-                notFound: "Hanya menemukan rumput laut untuk kata kunci ini. Coba lagi!",
-                
-                btnMore: "Tampilkan Lebih Banyak 🏴‍☠️",
-                btnDetail: "Detail",
-                btnSch: "Jadwal",
-                
-                cardSch: "Jadwal Kuliah",
-                cardClasses: "Kelas",
-                cardNoSch: "Jadwal belum tersedia.",
-                cardStats: "📊 Statistik & Nilai",
-                cardSem: "Semester:",
-                cardSyllabus: "Deskripsi:",
-                cardNoDesc: "Tidak ada deskripsi di dalam botol.",
-                cardChartTitle: "Distribusi Nilai",
-                cardChartLoad: "Mengambil data dari laut...",
-                chartLabel: "Mahasiswa"
+                headerDesc: "Temukan mata kuliah di kepulauan data IPB.",
+                lblMode: "MODE",
+                lblKeyword: "KATA KUNCI",
+                lblLevel: "JENJANG:",
+                btnSearch: "CARI",
+                btnMore: "MUAT LEBIH BANYAK",
+                emptyState: "Pantai masih sepi. Mulai pencarian!",
+                notFound: "Hanya menemukan kerang kosong. Coba lagi!",
+                cardSch: "Jadwal",
+                cardDetail: "Detail",
+                phAll: "Cari Matkul, Kode, atau Deskripsi..."
             },
             en: {
-                loadTitle: "Surfing Data... 🏄‍♂️",
-                loadDesc: "Catching big data waves from server...",
-                loadSpeed: "Wave Speed",
-                statSize: "Total Sand",
-                statTime: "Est. Arrival",
-                statusInit: "Waxing Board...",
-                statusMid: "Riding the Tube...",
-                statusEnd: "Hit the Shore!",
-                statusErr: "Wipeout! (Error)",
-                
                 headerSubtitle: "Explore",
-                headerCourses: "courses under the sun ☀️",
-                
-                lblMode: "🔍 Search Mode",
-                lblKeyword: "🌊 Keywords",
-                lblLevel: "🎓 Level",
-                btnSearch: "DIVE IN!",
-                
-                phAll: "Try 'Biologi', 'KOM202', or 'Statistics'...",
-                phName: "Ex: Biologi Umum, Algoritma...",
-                phCode: "Ex: BIO101, KOM120C...",
-                phDesc: "Search keywords in syllabus...",
-                phIdMk: "Enter Course ID (e.g., 203198)",
-                phIdJadwal: "Enter Schedule ID (e.g., 326777)",
-
-                optAll: "✨ Smart Search (All)",
-                optName: "🔤 By Name",
-                optCode: "🔖 By Code",
-                optDesc: "📝 By Syllabus",
-                optIdMk: "🆔 By Course ID",
-                optIdJadwal: "📅 By Schedule ID",
-                optLevelAll: "All Levels",
-
-                emptyState: "The ocean is calm. Start searching to make waves!",
-                notFound: "Found nothing but seaweed. Try another spot!",
-                
-                btnMore: "Show More Treasures 🏴‍☠️",
-                btnDetail: "Details",
-                btnSch: "Schedule",
-                
-                cardSch: "Class Schedule",
-                cardClasses: "Classes",
-                cardNoSch: "No schedule washed up yet.",
-                cardStats: "📊 Deep Dive & Stats",
-                cardSem: "Semester:",
-                cardSyllabus: "Syllabus:",
-                cardNoDesc: "No description in the bottle.",
-                cardChartTitle: "Grade Distribution",
-                cardChartLoad: "Fetching stats from the sea...",
-                chartLabel: "Students"
+                headerDesc: "Discover courses in the IPB data archipelago.",
+                lblMode: "MODE",
+                lblKeyword: "KEYWORDS",
+                lblLevel: "LEVEL:",
+                btnSearch: "SEARCH",
+                btnMore: "LOAD MORE",
+                emptyState: "The beach is quiet. Start searching!",
+                notFound: "Found only empty shells. Try again!",
+                cardSch: "Schedule",
+                cardDetail: "Detail",
+                phAll: "Search Course, Code, or Syllabus..."
             }
         };
 
-        // === UI ELEMENTS ===
-        const ui = {
-            progress: document.getElementById('progressBar'),
-            filesCount: document.getElementById('filesCount'),
-            percentText: document.getElementById('percentText'),
-            dataSize: document.getElementById('dataSize'),
-            speed: document.getElementById('downloadSpeed'),
-            etr: document.getElementById('etr'),
-            status: document.getElementById('currentStatus'),
-            overlay: document.getElementById('loadingOverlay'),
-            mainApp: document.getElementById('mainApp'),
-            langToggle: document.getElementById('langToggle')
-        };
-        
-        // === LANGUAGE LOGIC ===
-        ui.langToggle.addEventListener('change', (e) => {
-            currentLang = e.target.checked ? 'en' : 'id';
-            updateInterfaceLanguage();
-        });
-
-        function updateInterfaceLanguage() {
-            const t = i18n[currentLang];
-            
-            // Update Loading Screen (jika masih aktif)
-            document.getElementById('loadTitle').innerText = t.loadTitle;
-            document.getElementById('loadDesc').innerText = t.loadDesc;
-            document.getElementById('loadSpeedLabel').innerText = t.loadSpeed;
-            document.getElementById('statSize').innerText = t.statSize;
-            document.getElementById('statTime').innerText = t.statTime;
-
-            // Update Static UI via data-i18n
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if(t[key]) el.innerText = t[key];
-            });
-
-            // Update Search Dropdown Options
-            const sel = document.getElementById('searchMode');
-            sel.options[0].text = t.optAll;
-            sel.options[1].text = t.optName;
-            sel.options[2].text = t.optCode;
-            sel.options[3].text = t.optDesc;
-            sel.options[4].text = t.optIdMk;
-            sel.options[5].text = t.optIdJadwal;
-            
-            document.getElementById('strataSelect').options[0].text = t.optLevelAll;
-
-            // Update Placeholder
-            updatePlaceholder();
-
-            // Re-render hasil pencarian jika ada
-            if(searchResults.length > 0) {
-                // Clear container first simply to force re-render with new text
-                document.getElementById('resultsContainer').innerHTML = '';
-                // Render ulang dari halaman 1 sampai current page (logic simpel: reset ke page 1 biar ga ribet)
-                currentPage = 1;
-                renderPage();
-            } else {
-                // Update empty state text
-                const container = document.getElementById('resultsContainer');
-                if(!container.innerHTML.includes('card')) { // Kalau kosong/landing
-                     container.innerHTML = `
-                        <div class="text-center text-slate-400 py-20 flex flex-col items-center">
-                            <div class="text-6xl mb-4 opacity-30 waving-icon">🏝️</div>
-                            <p class="font-medium text-lg">${t.emptyState}</p>
-                        </div>`;
+        // === THEME ENGINE ---
+        const themeIcon = document.getElementById('themeIcon');
+        let currentTheme = localStorage.getItem('theme') || 'dark';
+        window.toggleTheme = function() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            themeIcon.className = currentTheme === 'dark' ? 'fa-solid fa-sun text-[var(--accent-secondary)]' : 'fa-solid fa-moon text-[var(--accent-secondary)]';
+            localStorage.setItem('theme', currentTheme);
+            Object.keys(chartStore).forEach(mkId => {
+                const wrapper = document.getElementById(`chart-wrapper-${mkId}`);
+                if(wrapper && !wrapper.closest('.hidden')) {
+                    const activeType = chartStore[mkId].config.type;
+                    loadChartData(mkId, activeType);
                 }
-            }
+            });
+        }
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        themeIcon.className = currentTheme === 'dark' ? 'fa-solid fa-sun text-[var(--accent-secondary)]' : 'fa-solid fa-moon text-[var(--accent-secondary)]';
+
+        // --- LIQUID EXPLOSION ---
+        function triggerLiquidExplosion(callback) {
+            const overlay = document.getElementById('liquidLayer');
+            const btn = document.getElementById('searchBtn');
+            const rect = btn.getBoundingClientRect();
+            overlay.style.display = 'block'; overlay.innerHTML = ''; 
+            const blob = document.createElement('div');
+            blob.className = 'liquid-blob animate-liquid-fill';
+            blob.style.left = (rect.left + rect.width/2) + 'px';
+            blob.style.top = (rect.top + rect.height/2) + 'px';
+            blob.style.width = Math.max(window.innerWidth, window.innerHeight) + 'px';
+            blob.style.height = blob.style.width;
+            overlay.appendChild(blob);
+            setTimeout(() => {
+                if(callback) callback();
+                blob.style.opacity = '0'; blob.style.transition = 'opacity 0.5s';
+                setTimeout(() => { overlay.style.display = 'none'; overlay.innerHTML = ''; }, 1500);
+            }, 600);
         }
 
-        // === LOADING LOGIC ===
+        // --- UI ---
+        document.getElementById('langToggle').addEventListener('change', (e) => {
+            currentLang = e.target.checked ? 'en' : 'id';
+            updateUI();
+        });
+
+        function updateUI() {
+            const t = i18n[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if(t[key]) el.innerHTML = t[key];
+            });
+            document.getElementById('searchInput').placeholder = t.phAll;
+        }
+
+        function updatePlaceholder() {
+            const mode = document.getElementById('searchMode').value;
+            const input = document.getElementById('searchInput');
+            if(mode === 'ID_MK') input.placeholder = "203...";
+            else if(mode === 'CODE') input.placeholder = "KOM...";
+            else input.placeholder = i18n[currentLang].phAll;
+        }
+
+        // --- LOADER ---
         async function loadDatabase() {
-            startTime = Date.now();
-            ui.status.innerText = i18n[currentLang].statusInit;
-            
+            const startTime = Date.now();
+            let totalBytes = 0;
             for (let i = 1; i <= TOTAL_FILES; i++) {
                 const fileName = `${FILE_PREFIX}${i}.json`;
                 try {
                     const response = await fetch(fileName);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    
+                    if (!response.ok) throw new Error("HTTP Error");
                     const blob = await response.blob();
-                    totalBytesLoaded += blob.size;
+                    totalBytes += blob.size;
                     const text = await blob.text();
                     const json = JSON.parse(text);
-                    
                     for(const item of json) {
                         const finalItem = item.Details ? item.Details : item;
                         if(finalItem) ALL_DATA.push(finalItem);
                     }
-
-                    const now = Date.now();
-                    const elapsedSec = (now - startTime) / 1000;
-                    const bps = elapsedSec > 0 ? totalBytesLoaded / elapsedSec : 0;
-                    const speedText = bps > 1024*1024 ? (bps/(1024*1024)).toFixed(1)+' MB/s' : (bps/1024).toFixed(0)+' KB/s';
-                    const progressPercent = (i / TOTAL_FILES) * 100;
-                    const avgSize = totalBytesLoaded / i;
-                    const remSec = bps > 0 ? (avgSize * (TOTAL_FILES - i)) / bps : 0;
-
-                    ui.progress.style.width = `${progressPercent}%`;
-                    ui.percentText.innerText = `${Math.round(progressPercent)}%`;
-                    ui.filesCount.innerText = `Pack: ${i}/${TOTAL_FILES}`;
-                    ui.speed.innerText = speedText;
-                    ui.dataSize.innerText = (totalBytesLoaded / (1024*1024)).toFixed(2) + ' MB';
-                    ui.etr.innerText = remSec < 1 && i < TOTAL_FILES ? '< 1s' : remSec.toFixed(0) + 's';
-                    
-                    if(i % 3 === 0) ui.status.innerText = i18n[currentLang].statusMid;
-
-                } catch (err) {
-                    console.error(err);
-                    ui.status.innerText = i18n[currentLang].statusErr;
-                    ui.status.classList.add('text-rose-500');
-                }
+                    const progress = (i / TOTAL_FILES) * 100;
+                    document.getElementById('initProgressBar').style.width = `${progress}%`;
+                    document.getElementById('percentText').innerText = `${Math.round(progress)}%`;
+                    document.getElementById('filesCount').innerText = `${i}/15`;
+                    const elapsed = (Date.now() - startTime) / 1000;
+                    const speed = (totalBytes / 1024) / elapsed; 
+                    document.getElementById('downloadSpeed').innerText = `${Math.round(speed)} KB/s`;
+                } catch (err) { console.error(err); }
             }
-            ui.status.innerText = i18n[currentLang].statusEnd;
-            finishLoading();
-        }
-
-        function finishLoading() {
             setTimeout(() => {
-                ui.overlay.style.opacity = '0';
-                ui.overlay.style.transition = 'opacity 0.8s ease';
+                const loader = document.getElementById('initLoader');
+                loader.style.opacity = '0';
                 setTimeout(() => {
-                    ui.overlay.style.display = 'none';
-                    ui.mainApp.classList.remove('hidden');
-                    document.body.classList.remove('loading');
+                    loader.style.display = 'none';
+                    document.getElementById('mainApp').classList.remove('hidden');
+                    setTimeout(() => document.getElementById('mainApp').style.opacity = '1', 100);
                     initApp();
-                }, 800);
-            }, 800);
+                }, 700);
+            }, 500);
         }
 
         function initApp() {
             document.getElementById('totalDataBadge').innerText = ALL_DATA.length.toLocaleString();
-            
             const strataSet = new Set(ALL_DATA.map(c => c.Strata).filter(Boolean));
             const select = document.getElementById('strataSelect');
             [...strataSet].sort().forEach(s => {
@@ -441,68 +475,53 @@
                 opt.innerText = s;
                 select.appendChild(opt);
             });
-            updateInterfaceLanguage(); // Set text awal
         }
 
-        // === SEARCH LOGIC ===
-        window.updatePlaceholder = function() {
-            const mode = document.getElementById('searchMode').value;
-            const input = document.getElementById('searchInput');
-            const t = i18n[currentLang];
-
-            if (mode === 'ALL') input.placeholder = t.phAll;
-            else if (mode === 'NAME') input.placeholder = t.phName;
-            else if (mode === 'CODE') input.placeholder = t.phCode;
-            else if (mode === 'DESC') input.placeholder = t.phDesc;
-            else if (mode === 'ID_MK') input.placeholder = t.phIdMk;
-            else if (mode === 'ID_JADWAL') input.placeholder = t.phIdJadwal;
+        // --- SEARCH ---
+        function handleSearch() {
+            const btn = document.getElementById('searchBtn');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i>`;
+            triggerLiquidExplosion(() => {
+                doSearchLogic();
+                btn.innerHTML = originalHTML;
+            });
         }
 
-        document.getElementById('btnSearch').addEventListener('click', () => doSearch(true));
-        document.getElementById('loadMoreBtn').addEventListener('click', () => { currentPage++; renderPage(); });
-        document.getElementById('searchInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') doSearch(true); });
-
-        function doSearch(reset = true) {
-            const rawKeyword = document.getElementById('searchInput').value.toLowerCase();
-            const keyword = rawKeyword.trim();
-            const strataFilter = document.getElementById('strataSelect').value;
+        function doSearchLogic() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
             const mode = document.getElementById('searchMode').value;
+            const strata = document.getElementById('strataSelect').value;
+            currentPage = 1;
             const container = document.getElementById('resultsContainer');
-            const t = i18n[currentLang];
+            container.innerHTML = '';
 
-            if (reset) {
-                currentPage = 1;
-                container.innerHTML = '';
-                
-                searchResults = ALL_DATA.filter(item => {
-                    if (strataFilter !== 'ALL' && item.Strata !== strataFilter) return false;
-                    if (!keyword) return true;
-                    switch (mode) {
-                        case 'NAME': return (item.Nama && item.Nama.toLowerCase().includes(keyword));
-                        case 'CODE': return (item.Kode && item.Kode.toLowerCase().includes(keyword));
-                        case 'DESC': return (item.Deskripsi && item.Deskripsi.toLowerCase().includes(keyword));
-                        case 'ID_MK': return String(item.MataKuliahId).includes(keyword);
-                        case 'ID_JADWAL': return item.ListJadwal && item.ListJadwal.some(j => String(j.JadwalKuliahId).includes(keyword));
-                        case 'ALL': default:
-                            return (item.Nama && item.Nama.toLowerCase().includes(keyword)) || 
-                                   (item.Kode && item.Kode.toLowerCase().includes(keyword)) ||
-                                   (item.Deskripsi && item.Deskripsi.toLowerCase().includes(keyword)) ||
-                                   String(item.MataKuliahId).includes(keyword) ||
-                                   (item.ListJadwal && item.ListJadwal.some(j => String(j.JadwalKuliahId).includes(keyword)));
-                    }
-                });
-
-                if (searchResults.length === 0) {
-                    container.innerHTML = `
-                        <div class="text-center py-20 bg-white/50 rounded-[2rem] border border-orange-100">
-                            <i class="fa-solid fa-fish text-4xl text-cyan-300 mb-3 animate-bounce"></i>
-                            <p class="text-slate-500 font-medium">${t.notFound}</p>
-                        </div>`;
-                    document.getElementById('loadMoreBtn').classList.add('hidden');
-                    return;
+            searchResults = ALL_DATA.filter(item => {
+                if(strata !== 'ALL' && item.Strata !== strata) return false;
+                if(!keyword) return true;
+                switch(mode) {
+                    case 'NAME': return item.Nama && item.Nama.toLowerCase().includes(keyword);
+                    case 'CODE': return item.Kode && item.Kode.toLowerCase().includes(keyword);
+                    case 'DESC': return item.Deskripsi && item.Deskripsi.toLowerCase().includes(keyword);
+                    case 'ID_MK': return String(item.MataKuliahId).includes(keyword);
+                    default: return (item.Nama && item.Nama.toLowerCase().includes(keyword)) ||
+                               (item.Kode && item.Kode.toLowerCase().includes(keyword)) ||
+                               (item.Deskripsi && item.Deskripsi.toLowerCase().includes(keyword)) ||
+                               String(item.MataKuliahId).includes(keyword) ||
+                               (item.ListJadwal && item.ListJadwal.some(j => String(j.JadwalKuliahId).includes(keyword)));
                 }
+            });
+
+            if(searchResults.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-20 bg-[#0f172a]/50 rounded-3xl border border-dashed border-[var(--glass-border)]">
+                        <i class="fa-solid fa-fish text-6xl text-[var(--accent-primary)] mb-4 animate-bounce"></i>
+                        <p class="font-bold text-gray-400">${i18n[currentLang].notFound}</p>
+                    </div>`;
+                document.getElementById('loadMoreBtn').classList.add('hidden');
+            } else {
+                renderPage();
             }
-            renderPage();
         }
 
         function renderPage() {
@@ -512,197 +531,182 @@
             const slice = searchResults.slice(start, end);
             const t = i18n[currentLang];
 
-            slice.forEach(item => {
-                let strataClass = 'bg-slate-100 text-slate-600';
-                if(item.Strata === 'S1') strataClass = 'bg-cyan-100 text-cyan-800 border border-cyan-200';
-                else if(item.Strata === 'S2') strataClass = 'bg-rose-100 text-rose-800 border border-rose-200';
-                else if(item.Strata === 'D3') strataClass = 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+            slice.forEach((item, index) => {
+                const delay = index * 0.05;
+                let strataColor = 'bg-gray-800 text-gray-300';
+                if(item.Strata === 'S1') strataColor = 'bg-cyan-900/50 text-cyan-200 border-cyan-800';
+                if(item.Strata === 'S2') strataColor = 'bg-rose-900/50 text-rose-200 border-rose-800';
+                if(item.Strata === 'D3') strataColor = 'bg-orange-900/50 text-orange-200 border-orange-800';
 
-                let jadwalHtml = '';
-                if (item.ListJadwal && item.ListJadwal.length > 0) {
-                    jadwalHtml = `
-                    <div class="hidden mt-4 bg-orange-50/50 rounded-2xl border border-orange-100 overflow-hidden" id="jadwal-${item.MataKuliahId}">
-                        <div class="px-5 py-3 bg-orange-100/50 border-b border-orange-200 flex justify-between items-center">
-                            <h4 class="font-bold text-orange-800 text-sm"><i class="fa-regular fa-calendar-check mr-2"></i>${t.cardSch}</h4>
-                            <span class="text-xs text-orange-600 font-bold bg-white px-2 py-1 rounded-lg">${item.ListJadwal.length} ${t.cardClasses}</span>
-                        </div>
-                        <div class="p-4 space-y-3">
-                            ${item.ListJadwal.map(j => {
-                                // MAPPING TETAP BAHASA INDONESIA SESUAI DATA IPB
-                                const typeMap = { 'K': 'Kuliah', 'P': 'Praktikum', 'R': 'Responsi' };
-                                const typeLabel = typeMap[j.JenisKelas] || j.JenisKelas || '?';
-                                const typeColor = j.JenisKelas === 'P' ? 'bg-orange-200 text-orange-800' : 'bg-cyan-200 text-cyan-800';
-                                
-                                // FORMAT KELAS PARALEL: P01, K02, etc. (Original)
-                                const kelasLabel = `Kelas ${j.KelasParalel}`;
-
-                                return `
-                                <div class="flex flex-col sm:flex-row sm:items-start gap-3 text-sm border-b border-orange-100 last:border-0 pb-3 last:pb-0">
-                                    <div class="flex gap-2 items-center min-w-[140px]">
-                                        <span class="font-mono text-xs bg-white border border-slate-200 text-slate-500 px-2 py-1 rounded-lg shadow-sm">#${j.JadwalKuliahId}</span>
-                                        <span class="text-xs font-bold px-3 py-1 rounded-full ${typeColor}">${typeLabel}</span>
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="font-bold text-slate-700">${kelasLabel}</div>
-                                        <div class="text-slate-500 text-xs mt-1 font-medium"><i class="fa-solid fa-clock text-cyan-400 mr-1"></i> ${j.Jadwal.join(', ')}</div>
-                                    </div>
-                                </div>`;
-                            }).join('')}
-                        </div>
-                    </div>`;
-                } else {
-                    jadwalHtml = `<div class="hidden mt-4 text-sm text-slate-400 italic p-5 bg-slate-50 rounded-2xl border border-slate-100" id="jadwal-${item.MataKuliahId}">${t.cardNoSch}</div>`;
-                }
-
-                const detailInfoHtml = `
-                    <div id="info-${item.MataKuliahId}" class="hidden mt-4 bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-inner">
-                        <div class="bg-gradient-to-r from-orange-100 to-rose-100 px-5 py-2 border-b border-orange-200">
-                             <span class="text-sm font-bold text-rose-800">${t.cardStats}</span>
-                        </div>
-                        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="text-sm text-slate-700">
-                                <div class="mb-4">
-                                    <span class="font-bold block text-slate-900 mb-1">${t.cardSem}</span> 
-                                    <span class="bg-slate-100 px-2 py-1 rounded-md text-slate-600">${item.Semester || 'Unknown'}</span>
-                                </div>
-                                <div>
-                                    <span class="font-bold block text-slate-900 mb-2">${t.cardSyllabus}</span>
-                                    <div class="desc-content leading-relaxed text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs max-h-60 overflow-y-auto shadow-inner">
-                                        ${item.Deskripsi || `<span class="italic text-slate-400">${t.cardNoDesc}</span>`}
-                                    </div>
-                                </div>
-                            </div>
+                const card = document.createElement('div');
+                card.className = 'island-card rounded-[2rem] overflow-hidden animate-enter';
+                card.style.animationDelay = `${delay}s`;
+                
+                card.innerHTML = `
+                    <div class="falling-sand"></div>
+                    <div class="sand-pile"></div>
+                    
+                    <div class="p-6 md:p-8 relative z-20 content-layer">
+                        <div class="flex justify-between items-start mb-6">
                             <div>
-                                <h4 class="font-bold text-slate-800 text-sm mb-3"><i class="fa-solid fa-chart-simple mr-2 text-cyan-500"></i>${t.cardChartTitle}</h4>
-                                <div id="chart-wrapper-${item.MataKuliahId}" class="relative h-48 w-full bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center">
-                                    <span class="text-xs text-slate-400 font-medium">${t.cardChartLoad}</span>
+                                <div class="flex gap-2 mb-2">
+                                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${strataColor}">${item.Strata || '-'}</span>
+                                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-white/20">ID: ${item.MataKuliahId}</span>
+                                </div>
+                                <h3 class="text-2xl font-black font-tech leading-tight mb-1">${item.Nama}</h3>
+                                <div class="flex items-center gap-2 font-mono text-sm font-bold opacity-80">
+                                    <i class="fa-solid fa-tag"></i> ${item.Kode} 
+                                    <span class="opacity-50">|</span> 
+                                    <span>${item.SksNama}</span>
                                 </div>
                             </div>
+                            <div class="flex flex-col gap-2 shrink-0">
+                                <button onclick="toggleInfo('${item.MataKuliahId}')" class="px-4 py-2 rounded-xl border border-white/30 hover:bg-white hover:text-black transition flex items-center gap-2 shadow-sm text-xs font-bold uppercase tracking-wider">
+                                    <i class="fa-solid fa-circle-info text-lg"></i> ${t.cardDetail}
+                                </button>
+                                <button onclick="toggleSection('jadwal-${item.MataKuliahId}')" class="px-4 py-2 rounded-xl border border-white/30 hover:bg-white hover:text-black transition flex items-center gap-2 shadow-sm text-xs font-bold uppercase tracking-wider">
+                                    <i class="fa-solid fa-calendar-days text-lg"></i> ${t.cardSch}
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                `;
 
-                const card = `
-                    <div class="bg-white p-6 rounded-[1.5rem] shadow-sm border border-orange-100 hover:shadow-lg hover:border-cyan-200 transition duration-300 group">
-                        <div class="flex flex-col md:flex-row md:justify-between gap-4">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-3">
-                                    <span class="px-3 py-1 text-xs font-bold rounded-full shadow-sm ${strataClass}">${item.Strata || 'N/A'}</span>
-                                    <span class="text-xs text-slate-400 font-mono bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">ID: ${item.MataKuliahId}</span>
+                        <div id="detail-${item.MataKuliahId}" class="hidden mt-4 bg-black/20 rounded-2xl p-4 border border-white/10 text-sm">
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <h4 class="font-bold text-xs uppercase mb-2 opacity-60">Deskripsi</h4>
+                                    <div class="max-h-48 overflow-y-auto opacity-90 leading-relaxed custom-scrollbar bg-black/20 p-3 rounded-xl border border-white/5">
+                                        ${item.Deskripsi || '<i class="opacity-50">Tidak ada deskripsi.</i>'}
+                                    </div>
                                 </div>
-                                <h3 class="text-xl font-bold text-slate-800 leading-tight group-hover:text-cyan-600 transition">${item.Nama}</h3>
-                                <div class="text-cyan-600 font-mono text-sm mt-2 font-bold flex items-center gap-2">
-                                    ${item.Kode} <span class="text-orange-300">|</span> <span class="text-slate-500 bg-orange-50 px-2 rounded-md">${item.SksNama}</span>
+                                <div class="flex flex-col">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h4 class="font-bold text-xs uppercase opacity-60">Statistik Nilai</h4>
+                                        <div class="flex gap-1" id="chart-opts-${item.MataKuliahId}">
+                                            <button class="chart-opt-btn active" onclick="loadChartData('${item.MataKuliahId}', 'bar', this)">BAR</button>
+                                            <button class="chart-opt-btn" onclick="loadChartData('${item.MataKuliahId}', 'doughnut', this)">DONUT</button>
+                                            <button class="chart-opt-btn" onclick="loadChartData('${item.MataKuliahId}', 'horizontal', this)">100%</button>
+                                        </div>
+                                    </div>
+                                    <div class="relative flex-1 bg-black/20 rounded-xl border border-white/5 flex items-center justify-center overflow-hidden min-h-[200px]">
+                                        <div id="chart-wrapper-${item.MataKuliahId}" class="w-full h-full p-2 flex items-center justify-center">
+                                            <span class="text-xs opacity-50 animate-pulse">Menghubungkan ke Satelit...</span>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="flex flex-row md:flex-col gap-2 shrink-0">
-                                <button onclick="toggleInfo('${item.MataKuliahId}')" 
-                                    class="flex items-center justify-center gap-2 text-xs font-bold bg-white border-2 border-orange-100 text-orange-500 px-5 py-2.5 rounded-xl hover:bg-orange-50 hover:border-orange-300 transition shadow-sm">
-                                    <i class="fa-solid fa-circle-info"></i> ${t.btnDetail}
-                                </button>
-                                <button onclick="toggleSection('jadwal-${item.MataKuliahId}')" 
-                                    class="flex items-center justify-center gap-2 text-xs font-bold bg-cyan-50 text-cyan-700 border-2 border-cyan-100 px-5 py-2.5 rounded-xl hover:bg-cyan-100 hover:border-cyan-300 transition shadow-sm">
-                                    <i class="fa-regular fa-calendar-days"></i> ${t.btnSch}
-                                </button>
                             </div>
                         </div>
-                        ${detailInfoHtml}
-                        ${jadwalHtml}
+
+                        <div id="jadwal-${item.MataKuliahId}" class="hidden mt-4 space-y-2">
+                            ${(item.ListJadwal && item.ListJadwal.length > 0) ? item.ListJadwal.map(j => `
+                                <div class="flex items-center gap-3 bg-black/20 p-3 rounded-xl border border-white/10 hover:border-white/40 transition group">
+                                    <div class="w-10 h-10 rounded-lg bg-black/30 flex items-center justify-center font-bold border border-white/10 text-xs shrink-0 shadow-sm">
+                                        ${j.KelasParalel}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-[10px] font-bold opacity-60 uppercase tracking-wide flex items-center gap-2">
+                                            <span class="bg-white/10 px-1.5 rounded">${j.JenisKelas}</span> #${j.JadwalKuliahId}
+                                        </div>
+                                        <div class="text-sm font-bold truncate mt-0.5">
+                                            ${j.Jadwal.join(', ')}
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('') : `<div class="p-3 text-center text-xs italic opacity-50 bg-black/20 rounded-xl">Jadwal Kosong</div>`}
+                        </div>
                     </div>
                 `;
-                container.insertAdjacentHTML('beforeend', card);
+                container.appendChild(card);
             });
 
             const btn = document.getElementById('loadMoreBtn');
-            if (end >= searchResults.length) {
-                btn.classList.add('hidden');
-            } else {
+            if(end >= searchResults.length) btn.classList.add('hidden');
+            else {
                 btn.classList.remove('hidden');
-                // Format tombol Load More dengan sisa jumlah
-                btn.innerText = t.btnMore + ` (${searchResults.length - end})`;
+                btn.querySelector('span').innerText = `${t.btnMore} (${searchResults.length - end})`;
             }
         }
 
-        // === TOGGLES & CHART ===
-        window.toggleSection = function(id) {
-            const el = document.getElementById(id);
-            if (el.classList.contains('hidden')) el.classList.remove('hidden');
-            else el.classList.add('hidden');
-        }
+        window.loadMore = function() { currentPage++; renderPage(); }
+        window.toggleSection = function(id) { document.getElementById(id).classList.toggle('hidden'); }
 
-        window.toggleInfo = async function(mkId) {
-            const el = document.getElementById(`info-${mkId}`);
-            if (el.classList.contains('hidden')) {
-                el.classList.remove('hidden');
-                const wrapper = document.getElementById(`chart-wrapper-${mkId}`);
-                if (!wrapper.querySelector('canvas')) {
-                    await loadChartData(mkId);
-                }
-            } else {
-                el.classList.add('hidden');
+        window.toggleInfo = function(mkId) {
+            const el = document.getElementById(`detail-${mkId}`);
+            el.classList.toggle('hidden');
+            if (!el.classList.contains('hidden') && !chartStore[mkId]) {
+                loadChartData(mkId, 'bar');
             }
         }
 
-        async function loadChartData(mkId) {
+        window.loadChartData = async function(mkId, chartType = 'bar', btnEl = null) {
+            if(btnEl) {
+                const parent = document.getElementById(`chart-opts-${mkId}`);
+                parent.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                btnEl.classList.add('active');
+            }
+
             const wrapper = document.getElementById(`chart-wrapper-${mkId}`);
-            wrapper.innerHTML = `<div class="animate-bounce text-2xl">🏄‍♂️</div>`; 
+            
             try {
-                const res = await fetch(`https://krs.ipb.ac.id/api/StatistikNilai?mataKuliahId=${mkId}`);
-                if (!res.ok) throw new Error("Gagal mengambil data");
-                const data = await res.json();
-                
-                const order = ['A', 'AB', 'B', 'BC', 'C', 'D', 'E', 'BL'];
-                data.sort((a, b) => order.indexOf(a.HurufMutu) - order.indexOf(b.HurufMutu));
+                if (chartStore[mkId]) chartStore[mkId].destroy();
+
+                let data;
+                if(window['data_'+mkId]) {
+                    data = window['data_'+mkId];
+                } else {
+                    const res = await fetch(`https://krs.ipb.ac.id/api/StatistikNilai?mataKuliahId=${mkId}`);
+                    if(!res.ok) throw new Error();
+                    data = await res.json();
+                    const order = ['A', 'AB', 'B', 'BC', 'C', 'D', 'E', 'BL'];
+                    data.sort((a,b) => order.indexOf(a.HurufMutu) - order.indexOf(b.HurufMutu));
+                    window['data_'+mkId] = data; 
+                }
+
                 const labels = data.map(d => d.HurufMutu);
                 const values = data.map(d => d.Jumlah);
-                
+
                 wrapper.innerHTML = `<canvas id="canvas-${mkId}"></canvas>`;
+                
                 const ctx = document.getElementById(`canvas-${mkId}`).getContext('2d');
                 
-                const colors = labels.map(label => {
-                    if(label === 'A') return '#06b6d4'; 
-                    if(label === 'AB') return '#22d3ee'; 
-                    if(label === 'B') return '#fbbf24'; 
-                    if(label === 'BC') return '#fb923c'; 
-                    if(label === 'C') return '#f87171'; 
-                    return '#94a3b8'; 
-                });
+                const sandColors = ['#e6c288', '#d4b483', '#cba366', '#a88854', '#ef4444', '#991b1b', '#7f1d1d', '#57534e'];
 
-                new Chart(ctx, {
-                    type: 'bar',
+                let config = {
+                    type: chartType === 'horizontal' ? 'bar' : chartType,
                     data: {
                         labels: labels,
                         datasets: [{
                             label: 'Mahasiswa',
                             data: values,
-                            backgroundColor: colors,
-                            borderRadius: 8,
-                            borderSkipped: false
+                            backgroundColor: chartType === 'doughnut' ? sandColors : labels.map(l => (l === 'A' || l === 'AB') ? '#e6c288' : '#64748b'),
+                            borderRadius: 4,
+                            borderColor: 'transparent'
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: {
+                        plugins: { 
                             legend: { display: false },
-                            tooltip: { 
-                                backgroundColor: '#fff7ed',
-                                titleColor: '#334155',
-                                bodyColor: '#ea580c',
-                                borderColor: '#fed7aa',
-                                borderWidth: 1,
-                                callbacks: { label: function(context) { return ` ${context.raw} ${i18n[currentLang].chartLabel}`; } } 
-                            }
+                            datalabels: { display: chartType === 'doughnut', color: '#000', formatter: (val) => val > 0 ? val : '' }
                         },
+                        indexAxis: chartType === 'horizontal' ? 'y' : 'x',
                         scales: {
-                            y: { beginAtZero: true, grid: { display: true, drawBorder: false, color: '#f1f5f9' }, ticks: { font: { family: 'Quicksand' } } },
-                            x: { grid: { display: false }, ticks: { font: { family: 'Quicksand', weight: 'bold' } } }
+                            x: { display: chartType !== 'doughnut', grid: { display: false }, ticks: { color: '#fff' } },
+                            y: { display: chartType !== 'doughnut', grid: { display: false }, ticks: { color: '#fff' } }
                         }
                     }
-                });
-            } catch (err) {
-                console.error(err);
-                wrapper.innerHTML = `<div class="text-center px-4"><i class="fa-solid fa-skull-crossbones text-rose-300 text-2xl mb-2"></i><p class="text-xs text-rose-400 font-bold">Chart sunk in the ocean.</p></div>`;
+                };
+
+                if (chartType === 'doughnut') {
+                    config.options.plugins.legend.display = true;
+                    config.options.plugins.legend.position = 'right';
+                    config.options.plugins.legend.labels = { color: '#fff', font: { size: 10 }, boxWidth: 10 };
+                }
+
+                chartStore[mkId] = new Chart(ctx, config);
+
+            } catch(e) {
+                wrapper.innerHTML = `<div class="text-xs text-center text-rose-400 font-bold p-4">Gagal memuat data statistik.<br>Cek koneksi internet.</div>`;
             }
         }
 
