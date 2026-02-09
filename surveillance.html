@@ -1,221 +1,652 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jadwal Kuliah IPB - Pro Search</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IPB Expedition • Living Jungle</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --accent: #22c55e; --border: #334155; --text: #f1f5f9; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 800px; }
-        
-        /* Progress Bars */
-        .progress-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 20px; }
-        .bar-container { background: #334155; height: 6px; border-radius: 10px; overflow: hidden; }
-        .bar-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.2s; }
-        .bar-label { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 4px; }
-
-        /* Search Area */
-        .search-area { position: sticky; top: 10px; z-index: 100; margin-bottom: 25px; }
-        .search-container { display: flex; gap: 10px; margin-bottom: 8px; }
-        input { 
-            flex: 1; padding: 16px; border-radius: 12px; border: 2px solid var(--border);
-            background: var(--card); color: white; font-size: 1rem; outline: none; box-sizing: border-box;
+        /* --- THEME VARS --- */
+        :root[data-theme="dark"] {
+            --bg-primary: #022c22; --bg-secondary: #064e3b; --accent-primary: #84cc16; --accent-secondary: #4d7c0f;
+            --accent-glow: rgba(132, 204, 22, 0.6); --text-main: #ecfdf5; --text-muted: #6ee7b7;
+            --glass-panel: rgba(2, 44, 34, 0.9); --glass-border: rgba(132, 204, 22, 0.3);
+            --card-bg: rgba(0, 0, 0, 0.4); --input-bg: rgba(0, 20, 15, 0.6);
+            --btn-grad-start: #84cc16; --btn-grad-end: #15803d;
+            --fog-opacity: 0.4; --tree-opacity: 1; --firefly-color: #84cc16;
+            --chart-grid: #064e3b; --chart-text: #ecfdf5;
         }
-        input:focus { border-color: var(--accent); }
-        
-        button {
-            padding: 0 25px; border-radius: 12px; border: none; background: var(--accent);
-            color: #052e16; font-weight: 800; cursor: pointer; transition: all 0.2s;
-            font-size: 1rem;
-        }
-        button:hover { background: #16a34a; transform: translateY(-2px); }
-        button:disabled { opacity: 0.3; cursor: not-allowed; }
-
-        /* Result Counter */
-        #total-count { 
-            font-size: 0.85rem; color: var(--accent); font-weight: 600; 
-            background: rgba(34, 197, 94, 0.1); display: inline-block;
-            padding: 4px 12px; border-radius: 20px; display: none;
+        :root[data-theme="light"] {
+            --bg-primary: #ecfccb; --bg-secondary: #bef264; --accent-primary: #15803d; --accent-secondary: #3f6212;
+            --accent-glow: rgba(21, 128, 61, 0.3); --text-main: #064e3b; --text-muted: #166534;
+            --glass-panel: rgba(255, 255, 255, 0.85); --glass-border: rgba(21, 128, 61, 0.2);
+            --card-bg: rgba(255, 255, 255, 0.6); --input-bg: rgba(255, 255, 255, 0.8);
+            --btn-grad-start: #4d7c0f; --btn-grad-end: #3f6212;
+            --fog-opacity: 0.15; --tree-opacity: 0.2; --firefly-color: #eab308;
+            --chart-grid: #dcfce7; --chart-text: #064e3b;
         }
 
-        /* Student Grouping */
-        .student-section { background: rgba(34, 197, 94, 0.05); border: 1px solid #22c55e33; border-radius: 16px; padding: 20px; margin-bottom: 30px; animation: fadeIn 0.4s ease; }
-        .student-header { border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 15px; }
-        .student-name { font-size: 1.3rem; font-weight: 800; color: var(--accent); }
-        .student-nim { font-size: 0.9rem; color: #94a3b8; font-family: monospace; }
+        body { font-family: 'Outfit', sans-serif; background-color: var(--bg-primary); color: var(--text-main); overflow-x: hidden; transition: background-color 0.5s ease, color 0.3s ease; }
 
-        /* Schedule Card */
-        .day-header { background: #334155; padding: 4px 10px; border-radius: 6px; font-weight: bold; margin: 15px 0 8px; display: inline-block; font-size: 0.75rem; }
-        .schedule-card { background: var(--card); padding: 12px 15px; border-radius: 10px; margin-bottom: 8px; display: grid; grid-template-columns: 85px 1fr; gap: 12px; border: 1px solid #334155; }
-        .time-box { font-weight: 700; color: var(--accent); display: flex; align-items: center; font-size: 0.9rem; border-right: 1px solid #334155; }
-        .course-info .name { font-weight: 600; font-size: 0.95rem; margin-bottom: 3px; }
-        .course-info .meta { font-size: 0.75rem; color: #94a3b8; }
+        /* --- CUSTOM INPUTS --- */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
+            background: var(--accent-primary); cursor: pointer; margin-top: -6px;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; cursor: pointer;
+            background: var(--glass-border); border-radius: 2px;
+        }
+
+        /* --- TRAFFIC WIDGET --- */
+        .traffic-pill {
+            background: var(--input-bg); border: 1px solid var(--glass-border); border-radius: 99px;
+            padding: 4px 12px; display: flex; align-items: center; gap: 8px;
+            font-family: 'Space Grotesk', sans-serif; backdrop-filter: blur(10px);
+            transition: all 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer;
+        }
+        .traffic-pill:hover { transform: scale(1.05); border-color: var(--accent-primary); box-shadow: 0 0 15px var(--accent-glow); }
+        .dot-indicator { width: 8px; height: 8px; border-radius: 50%; }
+        .dot-green { background: #22c55e; box-shadow: 0 0 8px #22c55e; animation: pulse 2s infinite; }
+        .dot-orange { background: #f97316; box-shadow: 0 0 8px #f97316; animation: pulse 2s infinite; }
+        .dot-red { background: #ef4444; box-shadow: 0 0 8px #ef4444; animation: pulse 0.8s infinite; }
+        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
+
+        /* --- LIQUID & BUBBLE FX --- */
+        #liquidLayer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; display: none; overflow: hidden; }
+        .liquid-blob { position: absolute; border-radius: 50%; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); transform: translate(-50%, -50%) scale(0); opacity: 1; }
+        .animate-liquid-fill { animation: liquidFill 0.8s cubic-bezier(0.7, 0, 0.3, 1) forwards; }
+        @keyframes liquidFill { 0% { transform: translate(-50%, -50%) scale(0); } 50% { transform: translate(-50%, -50%) scale(1.5); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; } 100% { transform: translate(-50%, -50%) scale(4); border-radius: 50%; } }
+        .bubble { position: absolute; bottom: -100px; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), var(--accent-primary)); border-radius: 50%; opacity: 0; box-shadow: 0 0 20px var(--accent-glow); }
+        .animate-bubble-rise { animation: bubbleRise 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        @keyframes bubbleRise { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-120vh) scale(0.5); opacity: 0; } }
+
+        /* --- PARALLAX --- */
+        .parallax-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -10; pointer-events: none; overflow: hidden; }
+        .bg-gradient { position: absolute; width: 100%; height: 100%; background: radial-gradient(circle at 50% 0%, var(--bg-secondary) 0%, var(--bg-primary) 80%); transition: background 0.5s ease; }
+        .fog-layer { position: absolute; bottom: 0; left: 0; width: 200%; height: 60%; background: url('https://raw.githubusercontent.com/danielstuart14/CSS_FOG_ANIMATION/master/img/fog1.png') repeat-x; background-size: cover; opacity: var(--fog-opacity); animation: moveFog 60s linear infinite; filter: blur(5px); transition: opacity 0.5s; }
+        @keyframes moveFog { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .tree-layer { position: absolute; bottom: -50px; left: -10%; width: 120%; height: 40vh; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 500 150' preserveAspectRatio='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,150 L0,120 Q50,140 100,100 T200,110 T300,90 T400,120 T500,100 L500,150 Z' fill='%23064e3b' fill-opacity='0.2'/%3E%3C/svg%3E"); background-size: cover; filter: blur(3px); transition: transform 0.1s linear, opacity 0.5s; opacity: var(--tree-opacity); }
+        .firefly { position: absolute; width: 4px; height: 4px; background-color: var(--firefly-color); border-radius: 50%; box-shadow: 0 0 10px var(--firefly-color); opacity: 0; animation: fireflyBlink linear infinite; transition: background-color 0.5s, box-shadow 0.5s; }
+        @keyframes fireflyBlink { 0% { opacity: 0; transform: translate(0, 0) scale(0.5); } 20% { opacity: 0.8; transform: translate(var(--mx1), var(--my1)) scale(1); } 50% { opacity: 0.4; } 80% { opacity: 0.9; transform: translate(var(--mx2), var(--my2)) scale(1); } 100% { opacity: 0; transform: translate(var(--mx3), var(--my3)) scale(0.5); } }
+
+        /* --- GLASS UI --- */
+        .glass-panel { background: var(--glass-panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15); transition: background 0.3s, border 0.3s; }
+        .glass-input { background: var(--input-bg); border: 1px solid var(--glass-border); color: var(--text-main); backdrop-filter: blur(12px); font-family: 'Space Grotesk', sans-serif; transition: all 0.3s ease; }
+        .glass-input:focus { border-color: var(--accent-primary); box-shadow: 0 0 20px var(--accent-glow); transform: scale(1.01); }
+        .glass-card { background: var(--card-bg); border: 1px solid var(--glass-border); transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; }
+        .glass-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px -10px var(--accent-glow); border-color: var(--accent-primary); }
+
+        /* --- BUTTONS --- */
+        .theme-btn { background: var(--glass-panel); border: 1px solid var(--glass-border); color: var(--text-main); transition: all 0.3s; }
+        .theme-btn:hover { background: var(--glass-border); transform: rotate(15deg); }
+        .search-btn { background: linear-gradient(135deg, var(--btn-grad-start), var(--btn-grad-end)); color: #fff; font-family: 'Space Grotesk', sans-serif; font-weight: 800; letter-spacing: 1px; box-shadow: 0 4px 15px var(--accent-glow); transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); text-shadow: 0 1px 2px rgba(0,0,0,0.3); position: relative; overflow: hidden; }
+        .search-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 8px 25px var(--accent-glow); }
+        .search-btn:disabled { background: #57534e; color: #a8a29e; cursor: not-allowed; filter: grayscale(1); box-shadow: none; transform: none; }
+        .copy-btn { background: rgba(0,0,0,0.1); border: 1px solid var(--glass-border); color: var(--text-muted); padding: 4px 8px; border-radius: 8px; font-size: 10px; transition: all 0.2s; cursor: pointer; }
+        .copy-btn:hover { background: var(--accent-primary); color: #fff; border-color: transparent; }
+        .copy-btn:active { transform: scale(0.9); }
+
+        /* --- LOADERS & ANIMATIONS --- */
+        .vine-track { background: rgba(0,0,0,0.1); border: 1px solid var(--glass-border); border-radius: 99px; padding: 2px; }
+        .vine-fill { background: linear-gradient(90deg, var(--btn-grad-start), var(--btn-grad-end)); height: 8px; border-radius: 99px; width: 0%; position: relative; transition: width 0.2s linear; box-shadow: 0 0 10px var(--accent-primary); }
+        .walker { position: absolute; top: -32px; right: -15px; font-size: 28px; animation: walk 0.6s infinite alternate; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.4)); }
+        @keyframes walk { from { transform: translateY(0) rotate(-5deg); } to { transform: translateY(-4px) rotate(5deg); } }
+        .animate-enter { animation: enter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0; transform: translateY(20px); }
+        @keyframes enter { to { opacity: 1; transform: translateY(0); } }
+
+        /* --- LAYOUT --- */
+        .result-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; width: 100%; align-items: start; }
+        @media (min-width: 1024px) {
+            .result-grid { grid-template-columns: repeat(2, 1fr); }
+            .result-grid:has(> :last-child:nth-child(1)) { grid-template-columns: minmax(0, 600px); justify-content: center; }
+            .result-grid > :last-child:nth-child(odd):not(:first-child) { grid-column: 1 / -1; width: 50%; margin-left: auto; margin-right: auto; }
+        }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .empty { text-align: center; padding: 40px; color: #64748b; font-style: italic; }
+        .font-tech { font-family: 'Space Grotesk', sans-serif; }
+        .text-glow { text-shadow: 0 0 10px var(--accent-glow); }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--glass-border); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-primary); }
     </style>
 </head>
-<body>
+<body class="selection:bg-lime-500/30 selection:text-lime-200">
 
-<div class="container">
-    <header style="text-align: center; margin-bottom: 20px;">
-        <h1 style="color: var(--accent); margin-bottom: 5px;">🗓️ Jadwal Kuliah IPB</h1>
-        <p id="status-text" style="font-size: 0.8rem; color: #94a3b8;">Sistem Siap...</p>
-        <div class="progress-grid" id="progress-grid"></div>
-    </header>
+    <div id="liquidLayer"></div>
 
-    <div class="search-area">
-        <div class="search-container">
-            <input type="text" id="search" placeholder="Cari Nama atau NIM..." disabled autocomplete="off">
-            <button id="search-btn" disabled>Cari</button>
-        </div>
-        <div id="total-count">Total: 0 Mahasiswa Ditemukan</div>
+    <div class="parallax-wrapper" id="parallaxContainer">
+        <div class="bg-gradient"></div>
+        <div id="fireflyContainer"></div>
+        <div class="fog-layer"></div>
+        <div class="tree-layer" id="trees"></div>
     </div>
 
-    <div id="results"></div>
-</div>
+    <div id="initLoader" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 glass-panel m-0 backdrop-blur-3xl transition-opacity duration-500">
+        <div class="w-full max-w-sm text-center relative z-10">
+            <div class="w-32 h-32 mx-auto mb-8 rounded-full flex items-center justify-center relative border-4 border-white/5 bg-black/10 shadow-[0_0_50px_var(--accent-glow)] animate-pulse">
+                <i class="ph-duotone ph-plant text-7xl text-[var(--accent-primary)] drop-shadow-lg"></i>
+            </div>
+            <h2 class="text-5xl font-black font-tech tracking-tighter mb-2 text-[var(--text-main)]">IPB <span style="color: var(--accent-primary)">EXP</span></h2>
+            <p class="text-sm font-mono tracking-[0.3em] uppercase mb-10 text-[var(--text-muted)]">System Initializing...</p>
+            <div class="vine-track w-full mb-2">
+                <div id="initProgressBar" class="vine-fill"><div class="walker">🦍</div></div>
+            </div>
+            <div class="flex justify-between px-2 font-mono text-[10px] text-[var(--text-muted)]">
+                <span id="initProgressText">0%</span><span id="initSpeed">CONNECTING...</span>
+            </div>
+        </div>
+    </div>
 
-<script>
-    let masterDb = [];
-    const TOTAL_FILES = 10;
-    const hariUrut = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
-    const searchInput = document.getElementById('search');
-    const searchBtn = document.getElementById('search-btn');
-    const resultsDiv = document.getElementById('results');
-    const totalCountLabel = document.getElementById('total-count');
-
-    // Init Progress Bars
-    const pg = document.getElementById('progress-grid');
-    for(let i=1; i<=TOTAL_FILES; i++) {
-        pg.innerHTML += `<div><div class="bar-container"><div id="bar-${i}" class="bar-fill"></div></div><div class="bar-label">P${i}</div></div>`;
-    }
-
-    async function loadPart(i) {
-        try {
-            const res = await fetch(`db_${i}.json`);
-            const total = parseInt(res.headers.get('content-length'), 10);
-            const reader = res.body.getReader();
-            let loaded = 0, chunks = [];
-            while(true) {
-                const {done, value} = await reader.read();
-                if (done) break;
-                chunks.push(value);
-                loaded += value.length;
-                if (total) document.getElementById(`bar-${i}`).style.width = (loaded/total*100) + '%';
-            }
-            const data = new Uint8Array(loaded);
-            let pos = 0;
-            for(let c of chunks) { data.set(c, pos); pos += c.length; }
-            return JSON.parse(new TextDecoder().decode(data));
-        } catch (e) { return []; }
-    }
-
-    async function init() {
-        const parts = [];
-        for(let i=1; i<=TOTAL_FILES; i++) parts.push(loadPart(i));
-        const res = await Promise.all(parts);
-        masterDb = res.flat();
-        document.getElementById('status-text').innerText = `Database: ${masterDb.length} Kelas Terdaftar`;
-        searchInput.disabled = false;
-        searchBtn.disabled = false;
-        searchInput.placeholder = "Masukkan Nama atau NIM...";
-        resultsDiv.innerHTML = '<div class="empty">Silakan masukkan kueri pencarian.</div>';
-    }
-
-    function performSearch() {
-        const query = searchInput.value.toLowerCase().trim();
-        if (query.length < 3) {
-            resultsDiv.innerHTML = '<div class="empty">Ketik minimal 3 huruf.</div>';
-            totalCountLabel.style.display = 'none';
-            return;
-        }
-
-        resultsDiv.innerHTML = '<div class="empty">Sedang memproses data...</div>';
-        totalCountLabel.style.display = 'none';
-
-        setTimeout(() => {
-            let studentMap = {};
-
-            masterDb.forEach(item => {
-                const matches = item.MahasiswaPeserta.filter(m => 
-                    m.Nama.toLowerCase().includes(query) || 
-                    m.Nim.toLowerCase().includes(query)
-                );
-
-                matches.forEach(stu => {
-                    if (!studentMap[stu.Nim]) {
-                        studentMap[stu.Nim] = { info: stu, classes: [] };
-                    }
-                    item.Jadwal.forEach(jStr => {
-                        const [dt, room] = jStr.split(' di ');
-                        const [h, w] = dt.split(' ');
-                        studentMap[stu.Nim].classes.push({
-                            h, w, n: item.Nama, k: item.Kode, p: item.KelasParalel, l: room || '-'
-                        });
-                    });
-                });
-            });
-
-            const totalStudents = Object.keys(studentMap).length;
-            
-            // Update & Show Total Count
-            if (totalStudents > 0) {
-                totalCountLabel.innerText = `Total: ${totalStudents} Mahasiswa Ditemukan`;
-                totalCountLabel.style.display = 'inline-block';
-            } else {
-                totalCountLabel.style.display = 'none';
-            }
-
-            renderGrouped(studentMap);
-        }, 50);
-    }
-
-    searchBtn.addEventListener('click', performSearch);
-    searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(); });
-
-    function renderGrouped(map) {
-        const students = Object.values(map);
-        if (students.length === 0) {
-            resultsDiv.innerHTML = '<div class="empty">Tidak ada hasil yang cocok.</div>';
-            return;
-        }
-
-        let html = '';
-        students.forEach(stu => {
-            stu.classes.sort((a, b) => hariUrut.indexOf(a.h) - hariUrut.indexOf(b.h) || a.w.localeCompare(b.w));
-
-            html += `
-                <div class="student-section">
-                    <div class="student-header">
-                        <div class="student-name">${stu.info.Nama}</div>
-                        <div class="student-nim">NIM: ${stu.info.Nim}</div>
+    <div id="mainApp" class="hidden opacity-0 transition-opacity duration-700 min-h-screen flex flex-col">
+        
+        <div class="sticky top-0 z-30 pt-4 px-4 pb-2">
+            <div class="max-w-7xl mx-auto glass-panel rounded-full px-6 py-3 shadow-2xl flex justify-between items-center relative overflow-hidden">
+                <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.reload()">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-[var(--bg-secondary)] to-[var(--bg-primary)] border border-[var(--glass-border)] flex items-center justify-center text-2xl">🌿</div>
+                    <div class="hidden sm:block">
+                        <h1 class="font-bold text-lg leading-none font-tech text-[var(--text-main)]">IPB <span style="color: var(--accent-primary)">Jungle</span></h1>
                     </div>
-            `;
+                </div>
 
-            let currentDay = '';
-            stu.classes.forEach(c => {
-                if (c.h !== currentDay) {
-                    currentDay = c.h;
-                    html += `<div class="day-header">${currentDay}</div>`;
-                }
-                html += `
-                    <div class="schedule-card">
-                        <div class="time-box">${c.w}</div>
-                        <div class="course-info">
-                            <div class="name">${c.n}</div>
-                            <div class="meta">🆔 ${c.k} | Paralel ${c.p} | 📍 ${c.l}</div>
+                <div id="trafficWidget" onclick="openTrafficModal()" class="hidden md:flex traffic-pill" title="Analisis Data Kampus">
+                    <div id="trafficDot" class="dot-indicator dot-green"></div>
+                    <div class="text-[10px] md:text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">
+                        <span id="trafficText">SCANNING...</span>
+                    </div>
+                </div>
+
+                <button onclick="window.toggleTheme()" class="theme-btn w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-lg relative overflow-hidden">
+                    <div class="relative z-10 transition-transform duration-500" id="themeIcon">🌙</div>
+                </button>
+            </div>
+        </div>
+
+        <div id="trafficModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-md bg-black/40 hidden opacity-0 transition-opacity duration-300">
+            <div class="glass-panel w-full max-w-4xl p-6 rounded-3xl relative scale-95 transition-transform duration-300 transform flex flex-col md:flex-row gap-6" id="trafficModalInner">
+                <button onclick="closeTrafficModal()" class="absolute top-4 right-4 text-[var(--text-muted)] hover:text-red-400 z-10">
+                    <i class="ph-bold ph-x text-xl"></i>
+                </button>
+
+                <div class="w-full md:w-1/3 flex flex-col border-b md:border-b-0 md:border-r border-[var(--glass-border)] pb-6 md:pb-0 md:pr-6">
+                    <div class="text-center mb-6">
+                        <h3 class="text-xl font-bold font-tech text-[var(--text-main)]">TRAFFIC <span style="color: var(--accent-primary)">FORECAST</span></h3>
+                        <p class="text-[10px] text-[var(--text-muted)] font-mono uppercase tracking-widest mt-1">Simulasi Kepadatan</p>
+                    </div>
+
+                    <div class="flex flex-col items-center justify-center mb-8 flex-1">
+                        <div class="text-6xl font-black font-tech text-[var(--text-main)] drop-shadow-lg" id="modalPercent">0%</div>
+                        <div class="text-[10px] font-bold uppercase tracking-widest mt-3 px-3 py-1 rounded-full border border-[var(--glass-border)] text-center" id="modalStatus">UNKNOWN</div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div>
+                            <label class="text-[10px] uppercase font-bold text-[var(--text-muted)] mb-2 block tracking-wider">HARI</label>
+                            <select id="modalDay" onchange="updateModalStats()" class="w-full bg-[var(--input-bg)] border border-[var(--glass-border)] text-[var(--text-main)] rounded-xl px-4 py-2 outline-none focus:border-[var(--accent-primary)] appearance-none font-bold text-sm">
+                                <option value="senin">Senin</option><option value="selasa">Selasa</option><option value="rabu">Rabu</option>
+                                <option value="kamis">Kamis</option><option value="jumat">Jumat</option><option value="sabtu">Sabtu</option><option value="minggu">Minggu</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[10px] uppercase font-bold text-[var(--text-muted)] mb-2 tracking-wider">
+                                <label>JAM</label><span id="modalHourDisplay" class="text-[var(--accent-primary)] font-mono text-base">08:00</span>
+                            </div>
+                            <input type="range" id="modalHour" min="7" max="21" step="1" oninput="updateModalStats()" class="w-full">
                         </div>
                     </div>
-                `;
+                    <button onclick="resetToLive()" class="w-full mt-8 py-3 rounded-xl border border-[var(--glass-border)] text-[var(--text-main)] text-xs font-bold hover:bg-[var(--glass-border)] transition flex items-center justify-center gap-2">
+                        <i class="ph-bold ph-broadcast"></i> KEMBALI KE LIVE
+                    </button>
+                </div>
+
+                <div class="w-full md:w-2/3 flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold font-tech text-[var(--text-main)]">ANALYTICS</h3>
+                        <div class="flex bg-[var(--input-bg)] rounded-lg p-1 border border-[var(--glass-border)]">
+                            <button onclick="setChartType('heatmap')" id="btn-heatmap" class="px-3 py-1 rounded text-[10px] font-bold transition bg-[var(--accent-primary)] text-black">HEATMAP</button>
+                            <button onclick="setChartType('line')" id="btn-line" class="px-3 py-1 rounded text-[10px] font-bold transition text-[var(--text-muted)] hover:text-[var(--text-main)]">TREND</button>
+                            <button onclick="setChartType('bar')" id="btn-bar" class="px-3 py-1 rounded text-[10px] font-bold transition text-[var(--text-muted)] hover:text-[var(--text-main)]">LOAD</button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 bg-[var(--input-bg)] rounded-2xl border border-[var(--glass-border)] p-2 relative overflow-hidden flex items-center justify-center min-h-[300px]">
+                        <div id="chartContainer" class="w-full h-full"></div>
+                    </div>
+                    <p class="text-[10px] text-[var(--text-muted)] mt-2 text-center font-mono opacity-60">Data derived from total campus occupancy stats.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-shrink-0 px-4 py-8 lg:py-16 relative z-10">
+            <div class="max-w-4xl mx-auto text-center mb-8">
+                <h2 class="text-3xl md:text-5xl font-black mb-4 font-tech text-[var(--text-main)] drop-shadow-sm">Jelajahi <span style="color: var(--accent-primary)" class="text-glow">Ekosistem</span> Data</h2>
+                <p class="text-[var(--text-muted)] max-w-lg mx-auto">Ketik Nama atau NIM mahasiswa untuk mulai memindai jejak jadwal perkuliahan.</p>
+            </div>
+            <div class="max-w-3xl mx-auto relative group" id="searchContainer">
+                <div class="absolute inset-0 bg-[var(--accent-primary)] opacity-10 blur-xl rounded-2xl group-hover:opacity-20 transition duration-500"></div>
+                <div class="relative flex flex-col md:flex-row gap-3 glass-panel p-3 rounded-3xl border border-[var(--glass-border)]">
+                    <div class="relative flex-1">
+                        <div class="absolute left-5 top-1/2 -translate-y-1/2 text-2xl text-[var(--text-muted)]"><i class="ph-bold ph-binoculars"></i></div>
+                        <input type="text" id="searchInput" class="glass-input w-full pl-14 pr-12 py-4 rounded-2xl text-lg font-bold outline-none" placeholder="Contoh: 'Atantya' atau 'G64...'" autocomplete="off" onkeydown="if(event.key === 'Enter') handleSearch()">
+                        <button id="clearBtn" onclick="clearSearch()" class="hidden absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-red-400 transition"><i class="ph-bold ph-x-circle text-xl"></i></button>
+                    </div>
+                    <button id="searchBtn" onclick="handleSearch()" class="search-btn py-4 px-8 rounded-2xl flex items-center justify-center gap-2 md:w-auto w-full group/btn relative overflow-hidden">
+                        <span class="relative z-10">SCAN DATA</span> <i class="ph-bold ph-magnifying-glass relative z-10 group-hover/btn:translate-x-1 transition-transform"></i>
+                        <div class="absolute inset-0 translate-x-[-100%] group-hover/btn:translate-x-[100%] bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-1 px-4 pb-20 max-w-7xl mx-auto w-full">
+            <div id="resultsContainer" class="result-grid">
+                <div class="col-span-full flex flex-col items-center justify-center py-12 opacity-50">
+                    <div class="w-40 h-40 bg-[var(--glass-border)] rounded-full flex items-center justify-center mb-6 animate-enter"><i class="ph-duotone ph-map-trifold text-6xl text-[var(--text-muted)]"></i></div>
+                    <p class="font-mono text-sm tracking-widest text-[var(--text-muted)]">AREA BELUM DIPINDAI</p>
+                </div>
+            </div>
+            <button id="loadMoreBtn" onclick="loadMore()" class="hidden w-full max-w-md mx-auto mt-12 py-4 glass-card rounded-2xl font-bold hover:bg-[var(--glass-border)] transition-all active:scale-95 shadow-lg tracking-widest uppercase text-sm flex items-center justify-center gap-3 font-tech text-[var(--accent-primary)]"><span>Muat Lebih Banyak</span> <i class="ph-bold ph-caret-down animate-bounce"></i></button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = './api/ipb_jungle/';
+        
+        // --- THEME & UTILS ---
+        const themeIcon = document.getElementById('themeIcon');
+        let currentTheme = localStorage.getItem('theme') || 'dark';
+        window.toggleTheme = function() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            themeIcon.innerText = currentTheme === 'dark' ? '🌙' : '☀️';
+            themeIcon.style.transform = 'rotate(360deg)'; setTimeout(() => themeIcon.style.transform = 'rotate(0deg)', 500);
+            localStorage.setItem('theme', currentTheme);
+            if(chartInstance) updateChartTheme(); 
+        }
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        themeIcon.innerText = currentTheme === 'dark' ? '🌙' : '☀️';
+
+        window.copyNIM = function(nim, btnId) {
+            navigator.clipboard.writeText(nim).then(() => {
+                const btn = document.getElementById(btnId);
+                const original = btn.innerHTML;
+                btn.innerHTML = '<i class="ph-bold ph-check text-[var(--accent-primary)]"></i> OK!';
+                setTimeout(() => { btn.innerHTML = original; }, 2000);
             });
-            html += `</div>`;
+        }
+
+        // --- TRAFFIC SYSTEM ---
+        let globalStatsData = null;
+        let chartInstance = null;
+        let currentChartType = 'heatmap';
+
+        async function loadLiveTraffic() {
+            try {
+                if (!globalStatsData) {
+                    const res = await fetch(`${API_BASE}/stats.json`);
+                    if (!res.ok) return;
+                    globalStatsData = await res.json();
+                }
+                resetToLive(); 
+            } catch (e) { console.log("Traffic data unavailable"); }
+        }
+
+        function updateWidgetUI(day, hour) {
+            if (!globalStatsData) return;
+            let percentage = 0;
+            if (globalStatsData.heatmap[day] && globalStatsData.heatmap[day][hour]) {
+                percentage = globalStatsData.heatmap[day][hour];
+            }
+            const widget = document.getElementById('trafficWidget');
+            const text = document.getElementById('trafficText');
+            const dot = document.getElementById('trafficDot');
+            
+            widget.classList.remove('hidden'); widget.classList.add('flex');
+            text.innerHTML = `LIVE: ${percentage}% KELAS`;
+            dot.className = 'dot-indicator';
+            if (percentage < 30) { dot.classList.add('dot-green'); text.innerHTML += " (SEPI)"; } 
+            else if (percentage < 70) { dot.classList.add('dot-orange'); text.innerHTML += " (NORMAL)"; } 
+            else { dot.classList.add('dot-red'); text.innerHTML += " (PADAT)"; }
+        }
+
+        // --- MODAL & CHARTS ---
+        window.openTrafficModal = function() {
+            const modal = document.getElementById('trafficModal');
+            const inner = document.getElementById('trafficModalInner');
+            resetToLive(); 
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); inner.classList.remove('scale-95'); inner.classList.add('scale-100'); }, 10);
+            setTimeout(() => { renderChart(); }, 200);
+        }
+
+        window.closeTrafficModal = function() {
+            const modal = document.getElementById('trafficModal');
+            const inner = document.getElementById('trafficModalInner');
+            modal.classList.add('opacity-0'); inner.classList.remove('scale-100'); inner.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        window.updateModalStats = function() {
+            if (!globalStatsData) return;
+            const day = document.getElementById('modalDay').value;
+            const hour = parseInt(document.getElementById('modalHour').value);
+            document.getElementById('modalHourDisplay').innerText = `${hour.toString().padStart(2, '0')}:00`;
+
+            let percentage = 0;
+            if (globalStatsData.heatmap[day] && globalStatsData.heatmap[day][hour]) percentage = globalStatsData.heatmap[day][hour];
+
+            document.getElementById('modalPercent').innerText = `${percentage}%`;
+            const statusEl = document.getElementById('modalStatus');
+            if (percentage < 30) { statusEl.innerText = "HUTAN SEPI 🍃"; statusEl.style.color = "#4ade80"; statusEl.style.borderColor = "#4ade80"; } 
+            else if (percentage < 70) { statusEl.innerText = "NORMAL 🚶"; statusEl.style.color = "#fb923c"; statusEl.style.borderColor = "#fb923c"; } 
+            else { statusEl.innerText = "SANGAT PADAT 🔥"; statusEl.style.color = "#f87171"; statusEl.style.borderColor = "#f87171"; }
+        }
+
+        window.resetToLive = function() {
+            const now = new Date();
+            const days = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+            const currentDay = days[now.getDay()];
+            let currentHour = now.getHours();
+            if(currentHour < 7) currentHour = 7; if(currentHour > 21) currentHour = 21;
+
+            document.getElementById('modalDay').value = currentDay;
+            document.getElementById('modalHour').value = currentHour;
+            updateModalStats();
+            updateWidgetUI(currentDay, currentHour);
+        }
+
+        window.setChartType = function(type) {
+            currentChartType = type;
+            ['heatmap', 'line', 'bar'].forEach(t => {
+                const btn = document.getElementById(`btn-${t}`);
+                if(t === type) { btn.classList.remove('text-[var(--text-muted)]'); btn.classList.add('bg-[var(--accent-primary)]', 'text-black'); }
+                else { btn.classList.add('text-[var(--text-muted)]'); btn.classList.remove('bg-[var(--accent-primary)]', 'text-black'); }
+            });
+            renderChart();
+        }
+
+        function getChartColors() {
+            const style = getComputedStyle(document.body);
+            return {
+                text: style.getPropertyValue('--text-muted').trim(),
+                accent: style.getPropertyValue('--accent-primary').trim(),
+                grid: style.getPropertyValue('--glass-border').trim()
+            };
+        }
+
+        function updateChartTheme() {
+            if(!chartInstance) return;
+            const colors = getChartColors();
+            chartInstance.updateOptions({
+                chart: { foreColor: colors.text },
+                colors: [colors.accent],
+                grid: { borderColor: colors.grid },
+                xaxis: { labels: { style: { colors: colors.text } } },
+                yaxis: { labels: { style: { colors: colors.text } } }
+            });
+        }
+
+        function renderChart() {
+            if (!globalStatsData) return;
+            if (chartInstance) chartInstance.destroy();
+
+            const colors = getChartColors();
+            const days = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu']; 
+            const hours = Array.from({length: 15}, (_, i) => i + 7);
+
+            let options = {
+                chart: { type: 'heatmap', height: '100%', fontFamily: 'Space Grotesk, sans-serif', background: 'transparent', toolbar: { show: false }, animations: { enabled: true } },
+                theme: { mode: currentTheme },
+                colors: [colors.accent],
+                grid: { borderColor: colors.grid, strokeDashArray: 4 },
+                dataLabels: { enabled: false },
+                stroke: { width: 0 },
+                xaxis: { type: 'category', categories: hours.map(h => `${h}:00`), tooltip: { enabled: false }, axisBorder: { show: false }, axisTicks: { show: false } }
+            };
+
+            if (currentChartType === 'heatmap') {
+                options.chart.type = 'heatmap';
+                options.series = days.map(day => ({
+                    name: day.toUpperCase(),
+                    data: hours.map(h => ({ x: `${h}`, y: globalStatsData.heatmap[day] ? (globalStatsData.heatmap[day][h] || 0) : 0 }))
+                })).reverse();
+                options.plotOptions = { heatmap: { shadeIntensity: 0.5, radius: 4, colorScale: { ranges: [{ from: 0, to: 30, color: '#22c55e' }, { from: 31, to: 70, color: '#f97316' }, { from: 71, to: 100, color: '#ef4444' }] } } };
+            } 
+            else if (currentChartType === 'line') {
+                options.chart.type = 'line';
+                options.stroke = { curve: 'smooth', width: 2 };
+                options.series = days.map(day => ({ name: day.toUpperCase(), data: hours.map(h => globalStatsData.heatmap[day] ? (globalStatsData.heatmap[day][h] || 0) : 0) }));
+                options.colors = ['#22c55e', '#3b82f6', '#f97316', '#a855f7', '#ef4444', '#eab308'];
+            }
+            else if (currentChartType === 'bar') {
+                options.chart.type = 'bar';
+                const dayLoad = days.map(day => {
+                    let sum = 0, count = 0;
+                    hours.forEach(h => { if(globalStatsData.heatmap[day] && globalStatsData.heatmap[day][h]) { sum += globalStatsData.heatmap[day][h]; count++; } });
+                    return count > 0 ? Math.round(sum / count) : 0;
+                });
+                options.series = [{ name: 'Avg Load %', data: dayLoad }];
+                options.xaxis.categories = days.map(d => d.toUpperCase());
+                options.plotOptions = { bar: { borderRadius: 4, columnWidth: '50%' } };
+            }
+            options.chart.foreColor = colors.text;
+            const chartEl = document.querySelector("#chartContainer");
+            chartEl.innerHTML = "";
+            chartInstance = new ApexCharts(chartEl, options);
+            chartInstance.render();
+        }
+
+        // --- SEARCH & DB ---
+        function triggerLiquidExplosion(callback) {
+            const btn = document.getElementById('searchBtn'); const rect = btn.getBoundingClientRect();
+            const overlay = document.getElementById('liquidLayer'); overlay.style.display = 'block'; overlay.innerHTML = ''; 
+            const blob = document.createElement('div'); blob.className = 'liquid-blob animate-liquid-fill';
+            blob.style.left = (rect.left + rect.width/2) + 'px'; blob.style.top = (rect.top + rect.height/2) + 'px';
+            blob.style.width = Math.max(window.innerWidth, window.innerHeight) + 'px'; blob.style.height = blob.style.width;
+            overlay.appendChild(blob);
+            setTimeout(() => {
+                for(let i=0; i<20; i++) {
+                    const bubble = document.createElement('div'); bubble.className = 'bubble animate-bubble-rise';
+                    const size = Math.random() * 60 + 20; bubble.style.width = size + 'px'; bubble.style.height = size + 'px';
+                    bubble.style.left = Math.random() * 100 + 'vw'; bubble.style.animationDelay = (Math.random() * 0.5) + 's';
+                    overlay.appendChild(bubble);
+                }
+                blob.style.opacity = '0'; blob.style.transition = 'opacity 0.3s';
+                callback();
+                setTimeout(() => { overlay.style.display = 'none'; overlay.innerHTML = ''; }, 1600);
+            }, 700); 
+        }
+
+        const trees = document.getElementById('trees');
+        const searchContainer = document.getElementById('searchContainer');
+        document.addEventListener('mousemove', (e) => {
+            const x = (window.innerWidth - e.pageX) / 100; const y = (window.innerHeight - e.pageY) / 100;
+            if(trees) trees.style.transform = `translateX(${x}px)`;
+            if(window.innerWidth > 768 && searchContainer) {
+                const rotX = (window.innerHeight / 2 - e.pageY) / 50; const rotY = (window.innerWidth / 2 - e.pageX) / 50;
+                searchContainer.style.transform = `perspective(1000px) rotateX(${rotX * 0.2}deg) rotateY(${rotY * 0.2}deg)`;
+            }
         });
-        resultsDiv.innerHTML = html;
-    }
 
-    init();
-</script>
+        let DB = [], CURRENT_SEARCH = [], PAGE_SIZE = 10, CURRENT_PAGE = 0, isCooldown = false;
 
+        function formatScheduleString(raw) {
+            const dayRegex = /(Senin|Selasa|Rabu|Kamis|Jumat|Sabtu|Minggu)/i;
+            const timeRegex = /(\d{1,2}:\d{2})\s?-\s?(\d{1,2}:\d{2})/;
+            const dayMatch = raw.match(dayRegex); const timeMatch = raw.match(timeRegex);
+            const day = dayMatch ? dayMatch[0] : ''; const time = timeMatch ? `${timeMatch[1]} - ${timeMatch[2]}` : '';
+            let detail = raw.replace(dayRegex, '').replace(timeRegex, '').replace(/\bdi\s+/gi, '').trim().replace(/^\W+|\W+$/g, '');
+            if (!day && !time) return `<span class="opacity-50 text-xs">${raw}</span>`;
+            return `<div class="flex items-start gap-3 py-3 border-b border-[var(--glass-border)] last:border-0 group/schedule">
+                <div class="min-w-[50px] pt-1"><div class="text-[10px] font-black uppercase bg-[var(--accent-primary)] text-black shadow-lg text-center rounded-md py-1 font-tech tracking-wider">${day}</div></div>
+                <div class="flex-1"><div class="flex items-center gap-2 mb-1"><i class="ph-fill ph-clock text-[var(--accent-primary)] text-sm"></i><span class="text-sm font-bold text-[var(--text-main)] tracking-wide font-tech">${time}</span></div>
+                <div class="flex items-center gap-1.5 mt-1"><span class="text-[10px] text-[var(--text-main)] bg-black/20 px-2 py-1 rounded border border-[var(--glass-border)] flex items-center gap-1 font-mono"><i class="ph-fill ph-map-pin text-[var(--accent-primary)]"></i> ${detail}</span></div></div></div>`;
+        }
+
+        function startCooldown(seconds) {
+            const btn = document.getElementById('searchBtn'); const originalHTML = `<span class="relative z-10">SCAN DATA</span> <i class="ph-bold ph-magnifying-glass relative z-10"></i>`;
+            isCooldown = true; btn.disabled = true; let timeLeft = seconds;
+            btn.innerHTML = `<i class="ph-bold ph-hourglass-high animate-spin text-xl"></i> <span class="font-mono ml-2">${timeLeft}s</span>`;
+            const timer = setInterval(() => { timeLeft--; if (timeLeft <= 0) { clearInterval(timer); isCooldown = false; btn.disabled = false; btn.innerHTML = originalHTML; } else { btn.innerHTML = `<i class="ph-bold ph-hourglass-high animate-spin text-xl"></i> <span class="font-mono ml-2">${timeLeft}s</span>`; } }, 1000);
+        }
+
+        function handleSearch() {
+            if (isCooldown) return;
+            const inputEl = document.getElementById('searchInput'); const keyword = inputEl.value.toLowerCase().trim();
+            if (keyword.length < 3) { alert("Sinyal lemah. Masukkan minimal 3 karakter."); inputEl.focus(); return; }
+            startCooldown(5); 
+            triggerLiquidExplosion(() => {
+                CURRENT_SEARCH = [];
+                for (let i = 0; i < DB.length; i++) { if (DB[i].toLowerCase().includes(keyword)) { const [name, nim] = DB[i].split('|'); CURRENT_SEARCH.push({ n: name, i: nim }); } }
+                CURRENT_PAGE = 1; renderPaginated();
+            });
+        }
+
+        const dayWeights = { 'senin': 1, 'selasa': 2, 'rabu': 3, 'kamis': 4, 'jumat': 5, 'sabtu': 6, 'minggu': 7 };
+        function getScheduleWeight(scheduleArray) {
+            if (!scheduleArray || scheduleArray.length === 0) return 999999; 
+            const raw = scheduleArray[0].toLowerCase(); let dayScore = 8; 
+            for (const [day, score] of Object.entries(dayWeights)) { if (raw.includes(day)) { dayScore = score; break; } }
+            let timeScore = 0; const timeMatch = raw.match(/(\d{1,2}):(\d{2})/); if (timeMatch) timeScore = parseInt(timeMatch[1] + timeMatch[2]);
+            return (dayScore * 10000) + timeScore;
+        }
+
+        async function fetchWithProgress(url, onProgress) {
+            const startTime = Date.now(); const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const contentLength = response.headers.get('content-length'); const total = contentLength ? parseInt(contentLength, 10) : 0;
+            let loaded = 0; const reader = response.body.getReader();
+            const stream = new ReadableStream({ start(controller) { function push() { reader.read().then(({ done, value }) => { if (done) { controller.close(); return; } loaded += value.byteLength; const elapsedTime = (Date.now() - startTime) / 1000; const kbps = ((loaded / elapsedTime) / 1024).toFixed(0); const percent = total ? Math.round((loaded / total) * 100) : 0; onProgress(percent, `${kbps} Kbps`); controller.enqueue(value); push(); }); } push(); } });
+            return new Response(stream);
+        }
+
+        // --- INIT APP & LOADER ---
+        (async () => {
+            const loader = document.getElementById('initLoader');
+            const app = document.getElementById('mainApp');
+            const bar = document.getElementById('initProgressBar');
+            const txt = document.getElementById('initProgressText');
+            const spd = document.getElementById('initSpeed');
+
+            // FAKE LOADER START
+            let progress = 0;
+            const fakeLoader = setInterval(() => {
+                progress += Math.random() * 10;
+                if (progress > 95) progress = 95;
+                bar.style.width = `${progress}%`;
+                txt.innerText = `${Math.floor(progress)}%`;
+            }, 100);
+
+            try {
+                const res = await fetch(`${API_BASE}/global_index.json`);
+                if (!res.ok) throw new Error("Network Error");
+                
+                // DATA LOADED -> SNAP TO 100%
+                clearInterval(fakeLoader);
+                bar.style.width = '100%';
+                txt.innerText = '100%';
+                spd.innerText = 'READY';
+
+                DB = await res.json();
+                loadLiveTraffic(); 
+                setInterval(loadLiveTraffic, 300000); 
+
+                setTimeout(() => {
+                    loader.style.opacity = '0';
+                    setTimeout(() => { 
+                        loader.remove(); 
+                        app.classList.remove('hidden'); 
+                        setTimeout(() => app.style.opacity = '1', 50); 
+                    }, 500);
+                }, 500);
+
+            } catch (e) { 
+                clearInterval(fakeLoader);
+                txt.innerText = "ERROR";
+                alert("Koneksi Hutan Terputus. Cek Server."); 
+            }
+        })();
+
+        // --- INIT FIREFLIES ---
+        function createFireflies() {
+            const container = document.getElementById('fireflyContainer');
+            for(let i=0; i<15; i++) {
+                const fly = document.createElement('div'); fly.className = 'firefly';
+                const size = Math.random() * 3 + 2; fly.style.width = `${size}px`; fly.style.height = `${size}px`;
+                fly.style.left = `${Math.random() * 100}vw`; fly.style.top = `${Math.random() * 100}vh`;
+                fly.style.setProperty('--mx1', `${(Math.random() - 0.5) * 200}px`); fly.style.setProperty('--my1', `${(Math.random() - 0.5) * 200}px`);
+                fly.style.setProperty('--mx2', `${(Math.random() - 0.5) * 200}px`); fly.style.setProperty('--my2', `${(Math.random() - 0.5) * 200}px`);
+                fly.style.setProperty('--mx3', `${(Math.random() - 0.5) * 200}px`); fly.style.setProperty('--my3', `${(Math.random() - 0.5) * 200}px`);
+                fly.style.animationDuration = `${Math.random() * 10 + 5}s`; fly.style.animationDelay = `${Math.random() * 5}s`;
+                container.appendChild(fly);
+            }
+        } createFireflies();
+
+        window.triggerShortcutSearch = function(keyword) { const inputEl = document.getElementById('searchInput'); inputEl.value = keyword; inputEl.focus(); window.scrollTo({ top: 0, behavior: 'smooth' }); handleSearch(); }
+
+        function renderPaginated() {
+            const container = document.getElementById('resultsContainer'); const btn = document.getElementById('loadMoreBtn');
+            if (CURRENT_SEARCH.length === 0) { container.innerHTML = `<div class="col-span-full text-center py-12 text-[var(--text-muted)] text-sm glass-panel rounded-3xl border-dashed border-2 border-[var(--glass-border)] font-mono">JEJAK TIDAK DITEMUKAN</div>`; btn.classList.add('hidden'); return; }
+            if(CURRENT_PAGE === 1) container.innerHTML = '';
+            const start = (CURRENT_PAGE - 1) * PAGE_SIZE; const end = CURRENT_PAGE * PAGE_SIZE; const dataToShow = CURRENT_SEARCH.slice(start, end);
+            const html = dataToShow.map((p, index) => `
+                <div class="glass-card rounded-3xl overflow-hidden animate-enter relative group" style="animation-delay: ${index * 0.05}s">
+                    <div class="px-5 py-4 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--bg-secondary)] relative z-10">
+                        <div class="flex items-center gap-4"><div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--bg-primary)] to-[var(--bg-secondary)] text-[var(--accent-primary)] flex items-center justify-center font-black text-xl shadow-inner border border-[var(--glass-border)] font-tech">${p.n.charAt(0)}</div>
+                        <div><div class="font-bold text-[var(--text-main)] text-lg leading-none font-tech tracking-wide">${p.n}</div>
+                        <div class="flex items-center gap-2 mt-1"><div class="text-xs font-mono text-[var(--accent-primary)] select-all opacity-80 flex items-center gap-1"><i class="ph-bold ph-fingerprint"></i> ${p.i}</div>
+                        <button id="copy-${p.i}" onclick="copyNIM('${p.i}', 'copy-${p.i}')" class="copy-btn flex items-center gap-1" title="Copy NIM"><i class="ph-bold ph-copy"></i> COPY</button></div></div></div>
+                    </div><div id="schedule-${p.i}" class="min-h-[100px] bg-[var(--card-bg)]"><div class="p-6 flex items-center gap-3 text-xs text-[var(--text-muted)] font-mono"><i class="ph-bold ph-spinner animate-spin text-[var(--accent-primary)] text-xl"></i> MENDOWNLOAD DATA JADWAL...</div></div>
+                </div>`).join('');
+            if(CURRENT_PAGE === 1) container.innerHTML = html; else container.insertAdjacentHTML('beforeend', html);
+            if (end < CURRENT_SEARCH.length) { btn.classList.remove('hidden'); btn.innerText = `LOAD MORE (${CURRENT_SEARCH.length - end})`; } else { btn.classList.add('hidden'); }
+            dataToShow.forEach(p => fetchSchedule(p.i));
+        }
+        window.loadMore = function() { CURRENT_PAGE++; renderPaginated(); }
+
+        const batchCache = {}; 
+        async function fetchSchedule(nim) {
+            const div = document.getElementById(`schedule-${nim}`); if(!div) return;
+            try {
+                const match = nim.match(/^([A-Z]+\d+?)(\d{2})\d+$/); const batchKey = match ? `${match[1]}_${match[2]}` : nim.substring(0, 5);
+                if (!batchCache[batchKey]) { const res = await fetch(`${API_BASE}/batch/${batchKey}.json`); if (!res.ok) throw new Error("Batch 404"); batchCache[batchKey] = await res.json(); }
+                const rawString = batchCache[batchKey].find(s => s.startsWith(nim + '|'));
+                if (!rawString) { div.innerHTML = `<div class="p-6 text-center text-sm text-[var(--text-muted)] italic font-mono">DATA KOSONG</div>`; return; }
+                const parts = rawString.split('|'); const jadwalBlob = parts[2];
+                if(!jadwalBlob) { div.innerHTML = `<div class="p-6 text-center text-sm text-[var(--text-muted)] italic font-mono">DATA KOSONG</div>`; return; }
+                const jadwalList = jadwalBlob.split(';').map(mStr => { const mParts = mStr.split('^'); return { id: mParts[0], k: mParts[1], n: mParts[2], s: mParts[3], t: mParts[4], pl: mParts[5], w: mParts[6] ? mParts[6].split('~') : [] }; });
+                const sortedJadwal = jadwalList.sort((a, b) => getScheduleWeight(a.w) - getScheduleWeight(b.w));
+                div.innerHTML = `<div class="divide-y divide-[var(--glass-border)]">` + sortedJadwal.map(m => {
+                    const isKuliah = m.t === 'K'; const badgeClass = isKuliah ? 'text-blue-400 border-blue-500/30 bg-blue-900/20' : 'text-orange-400 border-orange-500/30 bg-orange-900/20'; const typeLabel = isKuliah ? 'KUL' : (m.t === 'P' ? 'PRAK' : 'RESP'); const paralelLabel = m.pl ? `${typeLabel} ${m.pl}` : `${typeLabel}`;
+                    return `<div class="p-5 hover:bg-[var(--glass-border)] transition-colors group relative"><div class="flex justify-between items-start mb-4 relative z-10"><div><div class="font-bold text-[var(--text-main)] text-sm leading-snug group-hover:text-[var(--accent-primary)] transition font-tech tracking-wide">${m.n}</div><div class="flex flex-wrap gap-2 mt-2"><span class="text-[9px] font-bold px-2 py-1 rounded-md border ${badgeClass} font-mono uppercase tracking-wider">${m.k} • ${paralelLabel}</span><span class="text-[9px] text-[var(--text-muted)] border border-[var(--glass-border)] px-2 py-1 rounded-md font-bold font-mono flex items-center gap-1"><i class="ph-bold ph-coins"></i> ${m.s} SKS</span></div></div><button onclick="togglePeers('${m.id}', '${m.k}')" class="shrink-0 text-[10px] font-bold text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--glass-border)] border border-[var(--glass-border)] px-3 py-2 rounded-xl transition-all flex items-center gap-2 backdrop-blur-md shadow-sm uppercase font-tech tracking-widest"><i class="ph-bold ph-users-three"></i> TEAM</button></div><div class="bg-[var(--bg-primary)] rounded-xl px-4 border border-[var(--glass-border)] shadow-inner">${m.w.map(raw => formatScheduleString(raw)).join('') || '<div class="py-3 text-[10px] text-opacity-50 italic font-mono">TBA</div>'}</div><div id="peers-${m.id}" class="hidden mt-4 relative z-10"></div></div>`;
+                }).join('') + `</div>`;
+            } catch (e) { if(div) div.innerHTML = `<div class="p-5 text-sm text-red-400 text-center font-mono border-2 border-red-500/30 rounded-xl bg-red-900/20">CORRUPT</div>`; }
+        }
+
+        const matkulCache = {};
+        window.togglePeers = async (id, kode) => {
+            const box = document.getElementById(`peers-${id}`); if (!box.classList.contains('hidden')) { box.classList.add('hidden'); return; } box.classList.remove('hidden');
+            box.innerHTML = `<div class="glass-input p-4 rounded-2xl border-[var(--glass-border)]"><div class="text-[10px] text-[var(--text-muted)] flex justify-between font-mono mb-2"><span>ACCESSING MAINFRAME...</span> <span id="spd-${id}" class="text-[var(--accent-primary)] font-bold">0 Kbps</span></div><div class="h-1.5 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden border border-[var(--glass-border)]"><div id="bar-${id}" class="h-full bg-[var(--accent-primary)] w-0 progress-fill shadow-[0_0_15px_var(--accent-glow)]"></div></div></div>`;
+            const prefix = (kode.match(/^[A-Z]+/) || ['MISC'])[0];
+            try {
+                if (!matkulCache[prefix]) { const res = await fetchWithProgress(`${API_BASE}/matkul/${prefix}.json`, (pct, spd) => { const bar = document.getElementById(`bar-${id}`), spdEl = document.getElementById(`spd-${id}`); if(bar) bar.style.width = `${pct}%`; if(spdEl) spdEl.innerText = spd; }); matkulCache[prefix] = await res.json(); }
+                const rawStr = matkulCache[prefix].find(s => s.startsWith(id + '|'));
+                if (rawStr) {
+                    const parts = rawStr.split('|'); const detailStr = parts[1]; const pesertaBlob = parts[2];
+                    if(pesertaBlob) {
+                        const pList = pesertaBlob.split(';').map(p => { const [n,m] = p.split(','); return { i: n, n: m }; }); const sorted = pList.sort((a,b) => a.n.localeCompare(b.n)); const paralelInfo = detailStr.split('^')[4];
+                        box.innerHTML = `<div class="bg-[var(--bg-primary)] border-2 border-[var(--glass-border)] text-[var(--text-main)] p-4 rounded-3xl shadow-2xl mt-2 animate-enter backdrop-blur-xl relative overflow-hidden"><div class="flex justify-between items-end mb-4 border-b-2 border-[var(--glass-border)] pb-3 relative z-10"><div><span class="text-[10px] font-mono text-[var(--text-muted)] block mb-1">PARALEL UNIT</span><span class="text-lg font-black text-[var(--accent-primary)] font-tech tracking-wide drop-shadow-sm">KELAS ${paralelInfo}</span></div><span class="text-[11px] bg-[var(--bg-secondary)] px-3 py-1 rounded-lg text-[var(--text-main)] border border-[var(--glass-border)] font-bold font-mono flex items-center gap-2 shadow-inner"><i class="ph-fill ph-android-logo text-[var(--accent-primary)]"></i> ${pList.length} TRACKERS</span></div><div class="max-h-60 overflow-y-auto pr-2 space-y-1.5 custom-scrollbar relative z-10">${sorted.map((p, i) => `<div class="flex items-center justify-between text-[11px] p-2.5 rounded-xl hover:bg-[var(--glass-border)] cursor-pointer transition-all group/item border border-transparent hover:border-[var(--glass-border)]" onclick="window.triggerShortcutSearch('${p.i}')"><div class="flex items-center gap-3 overflow-hidden"><span class="text-[var(--text-muted)] w-5 text-right shrink-0 font-mono font-bold group-hover/item:text-[var(--accent-primary)] transition">${i+1}.</span><span class="truncate text-[var(--text-main)] font-medium font-tech tracking-wide">${p.n}</span></div><span class="font-mono text-[var(--text-muted)] group-hover/item:text-[var(--accent-primary)] transition text-[9px] bg-[var(--bg-secondary)] px-1.5 py-0.5 rounded border border-[var(--glass-border)]">${p.i}</span></div>`).join('')}</div></div>`;
+                    } else { box.innerHTML = `<div class="p-3 text-[10px] text-opacity-50 italic text-center font-mono border border-[var(--glass-border)] rounded-xl">KOSONG</div>`; }
+                } else { box.innerHTML = `<div class="p-3 text-[10px] text-red-500/60 italic text-center font-mono border border-red-500/10 rounded-xl">ERROR</div>`; }
+            } catch (e) { box.innerHTML = `<div class="text-red-400 text-[10px] p-3 text-center font-mono bg-red-900/20 rounded-xl border border-red-500/30">DISCONNECTED</div>`; }
+        };
+    </script>
 </body>
 </html>
