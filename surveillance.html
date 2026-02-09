@@ -170,13 +170,14 @@
         </div>
 
         <div id="trafficModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-md bg-black/40 hidden opacity-0 transition-opacity duration-300">
-            <div class="glass-panel w-full max-w-4xl p-6 rounded-3xl relative scale-95 transition-transform duration-300 transform flex flex-col md:flex-row gap-6" id="trafficModalInner">
-                <button onclick="closeTrafficModal()" class="absolute top-4 right-4 text-[var(--text-muted)] hover:text-red-400 z-10">
+            <div class="glass-panel w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl relative scale-95 transition-transform duration-300 transform flex flex-col md:flex-row" id="trafficModalInner">
+                
+                <button onclick="closeTrafficModal()" class="absolute top-4 right-4 z-50 p-2 rounded-full bg-[var(--input-bg)] text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition">
                     <i class="ph-bold ph-x text-xl"></i>
                 </button>
 
-                <div class="w-full md:w-1/3 flex flex-col border-b md:border-b-0 md:border-r border-[var(--glass-border)] pb-6 md:pb-0 md:pr-6">
-                    <div class="text-center mb-6">
+                <div class="w-full md:w-1/3 flex flex-col border-b md:border-b-0 md:border-r border-[var(--glass-border)] p-6">
+                    <div class="text-center mb-6 mt-2 md:mt-0">
                         <h3 class="text-xl font-bold font-tech text-[var(--text-main)]">TRAFFIC <span style="color: var(--accent-primary)">FORECAST</span></h3>
                         <p class="text-[10px] text-[var(--text-muted)] font-mono uppercase tracking-widest mt-1">Simulasi Kepadatan</p>
                     </div>
@@ -201,12 +202,9 @@
                             <input type="range" id="modalHour" min="7" max="21" step="1" oninput="updateModalStats()" class="w-full">
                         </div>
                     </div>
-                    <button onclick="resetToLive()" class="w-full mt-8 py-3 rounded-xl border border-[var(--glass-border)] text-[var(--text-main)] text-xs font-bold hover:bg-[var(--glass-border)] transition flex items-center justify-center gap-2">
-                        <i class="ph-bold ph-broadcast"></i> KEMBALI KE LIVE
-                    </button>
                 </div>
 
-                <div class="w-full md:w-2/3 flex flex-col">
+                <div class="w-full md:w-2/3 flex flex-col p-6 pt-0 md:pt-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-sm font-bold font-tech text-[var(--text-main)]">ANALYTICS</h3>
                         <div class="flex bg-[var(--input-bg)] rounded-lg p-1 border border-[var(--glass-border)]">
@@ -257,7 +255,7 @@
     </div>
 
     <script>
-        const API_BASE = './api/ipb_jungle/';
+        const API_BASE = 'api';
         
         // --- THEME & UTILS ---
         const themeIcon = document.getElementById('themeIcon');
@@ -282,7 +280,7 @@
             });
         }
 
-        // --- TRAFFIC SYSTEM ---
+        // --- TRAFFIC SYSTEM (SMART TIME LOGIC) ---
         let globalStatsData = null;
         let chartInstance = null;
         let currentChartType = 'heatmap';
@@ -294,7 +292,26 @@
                     if (!res.ok) return;
                     globalStatsData = await res.json();
                 }
-                resetToLive(); 
+                
+                // Get Time
+                const now = new Date();
+                const days = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+                let currentDayIndex = now.getDay();
+                let currentHour = now.getHours();
+
+                // LOGIC: If late night (e.g. 23:00), show next day 07:00
+                if (currentHour > 21) {
+                    currentDayIndex = (currentDayIndex + 1) % 7;
+                    currentHour = 7; 
+                } else if (currentHour < 7) {
+                    currentHour = 7;
+                }
+
+                const displayDay = days[currentDayIndex];
+                
+                // Update UI
+                updateWidgetUI(displayDay, currentHour);
+
             } catch (e) { console.log("Traffic data unavailable"); }
         }
 
@@ -320,7 +337,7 @@
         window.openTrafficModal = function() {
             const modal = document.getElementById('trafficModal');
             const inner = document.getElementById('trafficModalInner');
-            resetToLive(); 
+            resetToLive(); // Init with current/next time
             modal.classList.remove('hidden');
             setTimeout(() => { modal.classList.remove('opacity-0'); inner.classList.remove('scale-95'); inner.classList.add('scale-100'); }, 10);
             setTimeout(() => { renderChart(); }, 200);
@@ -350,16 +367,18 @@
         }
 
         window.resetToLive = function() {
+            // Re-calculate smart time for the modal default view
             const now = new Date();
             const days = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
-            const currentDay = days[now.getDay()];
+            let currentDayIndex = now.getDay();
             let currentHour = now.getHours();
-            if(currentHour < 7) currentHour = 7; if(currentHour > 21) currentHour = 21;
 
-            document.getElementById('modalDay').value = currentDay;
+            if (currentHour > 21) { currentDayIndex = (currentDayIndex + 1) % 7; currentHour = 7; }
+            else if (currentHour < 7) { currentHour = 7; }
+
+            document.getElementById('modalDay').value = days[currentDayIndex];
             document.getElementById('modalHour').value = currentHour;
             updateModalStats();
-            updateWidgetUI(currentDay, currentHour);
         }
 
         window.setChartType = function(type) {
@@ -535,7 +554,7 @@
             const txt = document.getElementById('initProgressText');
             const spd = document.getElementById('initSpeed');
 
-            // FAKE LOADER START
+            // FAKE LOADER
             let progress = 0;
             const fakeLoader = setInterval(() => {
                 progress += Math.random() * 10;
@@ -548,23 +567,17 @@
                 const res = await fetch(`${API_BASE}/global_index.json`);
                 if (!res.ok) throw new Error("Network Error");
                 
-                // DATA LOADED -> SNAP TO 100%
                 clearInterval(fakeLoader);
                 bar.style.width = '100%';
                 txt.innerText = '100%';
                 spd.innerText = 'READY';
 
                 DB = await res.json();
-                loadLiveTraffic(); 
-                setInterval(loadLiveTraffic, 300000); 
+                loadLiveTraffic(); setInterval(loadLiveTraffic, 300000); 
 
                 setTimeout(() => {
                     loader.style.opacity = '0';
-                    setTimeout(() => { 
-                        loader.remove(); 
-                        app.classList.remove('hidden'); 
-                        setTimeout(() => app.style.opacity = '1', 50); 
-                    }, 500);
+                    setTimeout(() => { loader.remove(); app.classList.remove('hidden'); setTimeout(() => app.style.opacity = '1', 50); }, 500);
                 }, 500);
 
             } catch (e) { 
