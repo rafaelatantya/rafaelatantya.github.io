@@ -1,0 +1,38 @@
+TOTAL_FILES=35
+TOTAL_SIZE=836 KB
+---
+ArrayList.md
+bangun.md
+bank.md
+BilanganPecahan.md
+CalculatorManager.md
+ClassPerson.md
+database.md
+Hotspot.md
+InterfaceShape2D.md
+kalori.md
+kelas.md
+LuasPermukaanDanVolumeKubus.md
+MagicBattle.md
+mahasiswa.md
+matrik.md
+Paritas.md
+ParselBuah.md
+pecahan.md
+PegawaiManager.md
+PolymorphismAbstract.md
+PolymorphismInterface.md
+prob-KOM120B15 - Rataan Bilangan.pdf
+prob-KOM120B37 - Merge Menggunakan DMA.pdf
+prob-KOM120C-02-A-Class Counter.pdf
+prob-KOM120C-02-B-Class Person.pdf
+prob-KOM120C-03-A-Class Person Lanjutan.pdf
+prob-KOM120C-03-A-Data Penjualan.pdf
+prob-KOM120C-04-A-Vector.pdf
+prob-KOM120C-04-B-HotSpot.pdf
+prob-KOM120C-06-A-Pewarisan Class Pegawai.pdf
+prob-KOM120C-06-B-Pewarisan Class Person.pdf
+segitiga.md
+SimulasiUjian.md
+TanahManager.md
+VolumeSilinder.md

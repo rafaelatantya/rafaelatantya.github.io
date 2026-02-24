@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="cyber">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KOM120C • Documentation</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Setup worker PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    
+    <style>
+        :root {
+            --bg-dark: #05050a;
+            --bg-sidebar: #0a0a14;
+            --bg-content: #0f0f1a;
+            --neon-cyan: #00f0ff;
+            --neon-cyan-dim: rgba(0, 240, 255, 0.1);
+            --neon-pink: #ff003c;
+            --text-main: #e0e0ff;
+            --text-muted: #6b7280;
+            --border-glow: rgba(0, 240, 255, 0.2);
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+
+        /* --- SIDEBAR & NAV --- */
+        .sidebar {
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid #1f2937;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .nav-item {
+            transition: all 0.2s;
+            border-left: 2px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-left-color: var(--neon-cyan-dim);
+        }
+
+        .nav-item.active {
+            background: var(--neon-cyan-dim);
+            border-left-color: var(--neon-cyan);
+            color: #fff;
+        }
+
+        .cyber-input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #1f2937;
+            color: var(--neon-cyan);
+            transition: all 0.3s;
+        }
+
+        .cyber-input:focus {
+            outline: none;
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 10px var(--neon-cyan-dim);
+        }
+
+        .badge {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-md { background: rgba(0, 240, 255, 0.1); color: var(--neon-cyan); border: 1px solid var(--neon-cyan-dim); }
+        .badge-pdf { background: rgba(255, 0, 60, 0.1); color: var(--neon-pink); border: 1px solid rgba(255, 0, 60, 0.2); }
+
+        /* --- MARKDOWN STYLING --- */
+        .markdown-body {
+            font-family: 'Space Grotesk', sans-serif;
+            line-height: 1.6;
+            color: #d1d5db;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+            color: #fff;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            font-weight: 700;
+        }
+        .markdown-body h1 { font-size: 2.25rem; border-bottom: 1px solid #374151; padding-bottom: 0.3em; color: var(--neon-cyan); }
+        .markdown-body h2 { font-size: 1.75rem; border-bottom: 1px solid #1f2937; padding-bottom: 0.3em; }
+        .markdown-body p { margin-bottom: 1em; }
+        .markdown-body code {
+            font-family: 'JetBrains Mono', monospace;
+            background: #1f2937;
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: var(--neon-pink);
+        }
+        .markdown-body pre {
+            background: #111827;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid #374151;
+            margin-bottom: 1.5em;
+        }
+        .markdown-body pre code {
+            background: transparent;
+            color: #e5e7eb;
+            padding: 0;
+        }
+        .markdown-body ul { list-style-type: disc; padding-left: 2em; margin-bottom: 1em; }
+        .markdown-body blockquote {
+            border-left: 4px solid var(--neon-cyan);
+            color: #9ca3af;
+            background: rgba(0, 240, 255, 0.05);
+            padding: 0.5em 1em;
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* --- PDF CANVAS STYLING --- */
+        .pdf-page {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto 1.5rem auto;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            border: 1px solid #374151;
+            background-color: white; /* PDF content is usually white */
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--neon-cyan); }
+
+        #sidebar-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+    </style>
+</head>
+<body class="flex h-screen antialiased selection:bg-cyan-900 selection:text-cyan-100">
+
+    <div id="sidebar-overlay" class="fixed inset-0 z-20 hidden md:hidden" onclick="toggleSidebar()"></div>
+
+    <aside id="sidebar" class="sidebar fixed md:relative z-30 w-72 h-full flex flex-col transform -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none">
+        <div class="p-5 border-b border-gray-800 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i class="ph-bold ph-terminal-window text-2xl text-[var(--neon-cyan)]"></i>
+                <h1 class="font-black tracking-widest text-white text-lg">KOM120C<span class="text-[var(--neon-cyan)]">_DOCS</span></h1>
+            </div>
+            <button class="md:hidden text-gray-400 hover:text-white" onclick="toggleSidebar()">
+                <i class="ph-bold ph-x text-xl"></i>
+            </button>
+        </div>
+
+        <div class="p-4 border-b border-gray-800">
+            <div class="relative">
+                <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                <input type="text" id="searchInput" class="cyber-input w-full pl-9 pr-3 py-2 rounded-lg font-mono-code text-xs placeholder-gray-600" placeholder="Search problems..." onkeyup="handleSearch()">
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-2" id="file-list">
+            <div class="text-center text-xs text-gray-600 mt-10 font-mono-code">
+                <i class="ph-bold ph-spinner animate-spin text-xl mb-2"></i><br>
+                Fetching Database...
+            </div>
+        </div>
+
+        <div class="p-3 border-t border-gray-800 text-[10px] font-mono-code text-gray-500 flex justify-between bg-black/20">
+            <span id="meta-files">0 Files</span>
+            <span id="meta-size">0 KB</span>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full bg-[var(--bg-content)] w-full relative">
+        
+        <header class="h-14 border-b border-gray-800 flex items-center px-4 justify-between bg-black/40 backdrop-blur-md sticky top-0 z-10">
+            <div class="flex items-center gap-3">
+                <button class="md:hidden text-gray-400 hover:text-white" onclick="toggleSidebar()">
+                    <i class="ph-bold ph-list text-2xl"></i>
+                </button>
+                <div id="current-file-title" class="font-mono-code text-sm text-gray-300">
+                    <span class="text-gray-600">Initializing vault...</span>
+                </div>
+            </div>
+            <div class="flex gap-2" id="header-actions"></div>
+        </header>
+
+        <div id="viewer-container" class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth relative">
+            
+            <div id="loading-state" class="hidden h-full flex-col items-center justify-center text-[var(--neon-cyan)]">
+                <i class="ph-bold ph-circle-notch animate-spin text-4xl mb-4"></i>
+                <p class="font-mono-code text-xs tracking-widest" id="loading-text">DECRYPTING FILE...</p>
+            </div>
+
+            <div id="markdown-viewer" class="hidden markdown-body pb-20"></div>
+            
+            <div id="pdf-viewer" class="hidden pb-20 w-full flex flex-col items-center"></div>
+
+        </div>
+    </main>
+
+    <script>
+        const BASE_URL = "./api/matkul/kom120c/problemset/";
+        const DATA_FILE = BASE_URL + "data.txt";
+        
+        let database = [];
+        let filteredData = [];
+        let activeFilename = null;
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        async function fetchDatabase() {
+            try {
+                const response = await fetch(DATA_FILE);
+                if (!response.ok) throw new Error("Database file missing");
+                
+                const rawText = await response.text();
+                parseTextData(rawText);
+                renderSidebar();
+
+                // AUTO LOAD: Cari file MD pertama, kalau nggak ada cari PDF pertama
+                if (database.length > 0) {
+                    const defaultFile = database.find(f => f.ext === 'md') || database[0];
+                    loadFile(defaultFile);
+                }
+
+            } catch (error) {
+                document.getElementById('file-list').innerHTML = `
+                    <div class="text-center text-red-400 text-xs mt-10 p-4 border border-red-900 rounded bg-red-950/20">
+                        <i class="ph-bold ph-warning text-xl mb-1"></i><br>
+                        Failed to load data.txt
+                    </div>`;
+            }
+        }
+
+        function parseTextData(rawText) {
+            const lines = rawText.split('\n').map(line => line.trim()).filter(line => line !== "");
+            let isParsingFiles = false;
+
+            lines.forEach(line => {
+                if (line === "---") { isParsingFiles = true; return; }
+                if (!isParsingFiles) {
+                    if (line.startsWith("TOTAL_FILES=")) document.getElementById("meta-files").innerText = line.split('=')[1] + " Files";
+                    if (line.startsWith("TOTAL_SIZE=")) document.getElementById("meta-size").innerText = line.split('=')[1];
+                } else {
+                    const ext = line.split('.').pop().toLowerCase();
+                    const name = line.replace(/\.(md|pdf)$/i, '');
+                    database.push({ filename: line, name, ext });
+                }
+            });
+            filteredData = [...database];
+        }
+
+        function renderSidebar() {
+            const listContainer = document.getElementById("file-list");
+            listContainer.innerHTML = "";
+
+            if (filteredData.length === 0) {
+                listContainer.innerHTML = `<div class="text-center text-xs text-gray-600 mt-10">No matches found.</div>`;
+                return;
+            }
+
+            filteredData.forEach(item => {
+                const isPdf = item.ext === 'pdf';
+                const icon = isPdf ? 'ph-file-pdf text-[var(--neon-pink)]' : 'ph-file-md text-[var(--neon-cyan)]';
+                const badgeClass = isPdf ? 'badge-pdf' : 'badge-md';
+                const isActive = activeFilename === item.filename ? 'active' : '';
+
+                const btn = document.createElement('button');
+                btn.className = `nav-item w-full text-left p-3 rounded-lg flex flex-col gap-2 mb-1 group ${isActive}`;
+                btn.onclick = () => loadFile(item);
+                
+                btn.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <i class="ph-duotone ${icon} text-lg shrink-0 mt-0.5 group-hover:scale-110 transition-transform"></i>
+                        <div class="flex-1 overflow-hidden">
+                            <div class="text-sm text-gray-300 group-hover:text-white truncate font-medium ${isActive ? 'text-white' : ''}">${item.name}</div>
+                            <span class="badge ${badgeClass} inline-block mt-1">${item.ext}</span>
+                        </div>
+                    </div>
+                `;
+                listContainer.appendChild(btn);
+            });
+        }
+
+        function handleSearch() {
+            const query = document.getElementById("searchInput").value.toLowerCase();
+            filteredData = database.filter(item => item.name.toLowerCase().includes(query));
+            renderSidebar();
+        }
+
+        async function loadFile(item) {
+            activeFilename = item.filename;
+            renderSidebar();
+            if (window.innerWidth < 768) toggleSidebar();
+
+            const titleEl = document.getElementById('current-file-title');
+            const actionEl = document.getElementById('header-actions');
+            const loadState = document.getElementById('loading-state');
+            const mdViewer = document.getElementById('markdown-viewer');
+            const pdfViewer = document.getElementById('pdf-viewer');
+
+            mdViewer.classList.add('hidden');
+            pdfViewer.classList.add('hidden');
+            loadState.classList.remove('hidden');
+            loadState.classList.add('flex');
+
+            const fileUrl = BASE_URL + item.filename;
+            titleEl.innerHTML = `<span class="text-gray-400">~/problemset/</span><span class="text-white font-bold truncate max-w-[150px] md:max-w-xs inline-block align-bottom">${item.filename}</span>`;
+            
+            actionEl.innerHTML = `
+                <a href="${fileUrl}" target="_blank" download title="Download File" class="p-1.5 rounded bg-gray-800 text-gray-400 hover:text-[var(--neon-cyan)] hover:bg-gray-700 transition">
+                    <i class="ph-bold ph-download-simple text-lg"></i>
+                </a>
+            `;
+
+            try {
+                if (item.ext === 'md') {
+                    document.getElementById('loading-text').innerText = "RENDERING MARKDOWN...";
+                    const response = await fetch(fileUrl);
+                    if (!response.ok) throw new Error("Failed to fetch markdown file.");
+                    
+                    mdViewer.innerHTML = marked.parse(await response.text());
+                    
+                    loadState.classList.add('hidden');
+                    loadState.classList.remove('flex');
+                    mdViewer.classList.remove('hidden');
+                    document.getElementById('viewer-container').scrollTop = 0;
+
+                } else if (item.ext === 'pdf') {
+                    document.getElementById('loading-text').innerText = "RENDERING PDF CANVAS...";
+                    pdfViewer.innerHTML = ''; // Reset container
+
+                    // Render via PDF.js
+                    const loadingTask = pdfjsLib.getDocument(fileUrl);
+                    const pdf = await loadingTask.promise;
+                    
+                    // Loop render setiap halaman
+                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                        const page = await pdf.getPage(pageNum);
+                        
+                        // Scale 1.5 biar resolusinya nggak burem di layar high-DPI
+                        const viewport = page.getViewport({ scale: 1.5 });
+                        
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        canvas.className = 'pdf-page'; // Styling CSS biar responsif
+                        
+                        pdfViewer.appendChild(canvas);
+                        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                    }
+
+                    loadState.classList.add('hidden');
+                    loadState.classList.remove('flex');
+                    pdfViewer.classList.remove('hidden');
+                    document.getElementById('viewer-container').scrollTop = 0;
+                }
+            } catch (error) {
+                loadState.classList.add('hidden');
+                loadState.classList.remove('flex');
+                mdViewer.innerHTML = `
+                    <div class="p-6 border border-red-900 bg-red-950/20 text-red-400 rounded-xl font-mono-code">
+                        <h2 class="text-xl font-bold mb-2">Error Processing File</h2>
+                        <p>${error.message}</p>
+                    </div>`;
+                mdViewer.classList.remove('hidden');
+            }
+        }
+
+        window.onload = fetchDatabase;
+
+    </script>
+</body>
+</html>
