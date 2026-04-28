@@ -63,6 +63,7 @@ When asked to add a new project "X":
 ---
 
 ## ⚠️ PROHIBITED ACTIONS
+- **NEVER** perform an automatic `git push` without explicit user confirmation.
 - **DO NOT** use TailwindCSS classes unless explicitly requested.
 - **DO NOT** change the logic of existing visualizations without creating a backup/branch first.
 - **DO NOT** delete files in `/data/` without verifying if other projects depend on them.
