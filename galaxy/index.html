@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>University Graph • Galaxy Final</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/graphology/0.25.4/graphology.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sigma.js/2.4.0/sigma.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --bg-deep: #030712;
+            --bg-panel: rgba(15, 23, 42, 0.95);
+            --glass-border: rgba(56, 189, 248, 0.3);
+            --accent-cyan: #38bdf8;
+            --accent-pink: #f472b6;
+            --accent-purple: #c084fc;
+            --glow-cyan: 0 0 15px rgba(56, 189, 248, 0.3);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-main: 'Outfit', sans-serif;
+            --font-tech: 'Space Grotesk', monospace;
+        }
+
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg-deep); color: var(--text-main); font-family: var(--font-main); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        .stars-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; background: radial-gradient(circle at center, #1e293b 0%, #020617 100%); }
+        .star { position: absolute; background: white; border-radius: 50%; opacity: 0.5; animation: twinkle linear infinite; }
+        @keyframes twinkle { 0% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0.2; transform: scale(0.8); } }
+
+        /* --- UI PANEL --- */
+        #ui-layer {
+            position: absolute; z-index: 50; display: flex; flex-direction: column;
+            background: var(--bg-panel); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); border-radius: 20px; overflow: hidden;
+        }
+        @media (min-width: 769px) { #ui-layer { top: 20px; left: 20px; width: 400px; max-height: 90vh; } #ui-layer.collapsed { height: 70px; } }
+        @media (max-width: 768px) { #ui-layer { top: auto; bottom: 0; left: 0; width: 100%; height: 80vh; border-radius: 24px 24px 0 0; border-bottom: none; } #ui-layer.collapsed { height: 65px; } }
+
+        .panel-header { padding: 15px 20px; flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); }
+        #ui-toggle { font-size: 24px; color: var(--accent-cyan); transition: transform 0.4s ease; }
+        #ui-layer.collapsed #ui-toggle { transform: rotate(180deg); }
+
+        .tab-group { display: flex; gap: 8px; padding: 10px 20px; background: rgba(0,0,0,0.2); flex-shrink: 0; }
+        .tab-btn { flex: 1; background: transparent; color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1); padding: 10px; font-size: 11px; border-radius: 8px; cursor: pointer; font-weight: 700; transition: 0.3s; font-family: var(--font-tech); }
+        .tab-btn.active { background: var(--accent-cyan); color: #000; border-color: var(--accent-cyan); box-shadow: var(--glow-cyan); }
+        
+        .scroll-content { flex-grow: 1; overflow-y: auto; padding: 20px; scrollbar-width: thin; scrollbar-color: var(--accent-cyan) transparent; }
+        .view-section { display: none; flex-direction: column; gap: 15px; animation: fadeIn 0.4s ease; } 
+        .view-section.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* INPUTS */
+        .glass-input { width: 100%; padding: 14px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; border-radius: 12px; outline: none; font-family: var(--font-main); transition: 0.3s; font-size: 14px; }
+        .glass-input:focus { border-color: var(--accent-cyan); background: rgba(0,0,0,0.5); }
+        .search-row { display: flex; gap: 8px; }
+        .search-btn { width: 52px; background: var(--accent-cyan); border-radius: 12px; color: #000; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: var(--glow-cyan); transition: 0.2s; cursor: pointer; }
+        .search-btn:active { transform: scale(0.95); }
+        
+        .action-btn { width: 100%; padding: 16px; background: linear-gradient(90deg, var(--accent-purple), var(--accent-pink)); color: white; border-radius: 12px; font-weight: 800; font-family: var(--font-tech); letter-spacing: 1px; box-shadow: 0 4px 20px rgba(192, 132, 252, 0.4); text-transform: uppercase; font-size: 12px; cursor: pointer; }
+        .action-btn:active { transform: scale(0.98); }
+
+        /* WIDGETS */
+        .block-container { background: rgba(255,255,255,0.03); border-radius: 14px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
+        .block-header { padding: 12px 14px; background: rgba(0,0,0,0.2); font-size: 10px; font-weight: 700; color: var(--accent-cyan); font-family: var(--font-tech); letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .block-body { padding: 14px; }
+        .echarts-wrapper { width: 100%; height: 200px; border-radius: 8px; background: rgba(0,0,0,0.2); }
+
+        /* LISTS */
+        .friend-rank { padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.05); margin-bottom: 6px; font-size: 13px; color: #e2e8f0; display: flex; justify-content: space-between; align-items: center; border: 1px solid transparent; cursor: pointer; }
+        .friend-rank:hover { border-color: var(--accent-cyan); background: rgba(56, 189, 248, 0.1); }
+        .badge { background: var(--accent-cyan); color: #000; padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 10px; }
+        .course-check { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 4px; background: #1a1d26; margin-bottom: 2px; font-size: 11px; color: #ccc; cursor: pointer; }
+
+        /* PATHFINDER */
+        .path-step { padding: 12px; border-left: 2px solid #333; position: relative; margin-left: 10px; background: #12151d; border-radius: 0 6px 6px 0; margin-bottom: 10px; animation: slideIn 0.3s ease-out; }
+        .path-step::before { content: ''; position: absolute; left: -6px; top: 15px; width: 10px; height: 10px; border-radius: 50%; background: #333; border: 2px solid #0B0E14; }
+        .path-step.start::before { background: #00C9FF; box-shadow: 0 0 10px #00C9FF; }
+        .path-step.end::before { background: #E91E63; box-shadow: 0 0 10px #E91E63; }
+        .path-step.mid::before { background: #FFC107; }
+        @keyframes slideIn { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:translateX(0); } }
+        .path-arrow { font-size: 10px; color: #777; margin: 4px 0; padding-left: 10px; border-left: 1px dashed #333; }
+        .path-courses { font-size: 10px; color: #aaa; margin-top: 4px; background: #1a1d26; padding: 6px; border-radius: 4px; }
+
+        /* DETAILS */
+        #details-panel { position: fixed; top: 20px; right: 20px; z-index: 60; width: 320px; max-height: 85vh; overflow-y: auto; display: none; flex-direction: column; border-radius: 20px; background: #0f172a; border: 1px solid var(--glass-border); box-shadow: -10px 0 40px rgba(0,0,0,0.5); }
+        @media (max-width: 768px) { #details-panel { top: auto; bottom: 0; right: 0; left: 0; width: 100%; border-radius: 24px 24px 0 0; max-height: 70vh; border-bottom: none; } }
+        .detail-header { padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #0f172a; z-index: 10; }
+        .detail-body { padding: 20px; }
+        .course-card { background: rgba(255,255,255,0.05); padding: 12px; margin-bottom: 8px; border-radius: 12px; border-left: 3px solid #334155; }
+        .card-active { border-left-color: var(--accent-cyan); } .card-unique { border-left-color: var(--accent-pink); }
+        .tag-match { float: right; font-size: 9px; background: var(--accent-cyan); color: #000; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+
+        .footer-stats { padding: 10px 15px; border-top: 1px solid #363a45; font-size: 10px; color: #777; display: flex; justify-content: space-between; background: rgba(21, 25, 34, 0.95); border-radius: 0 0 16px 16px; }
+        
+        /* ADVANCED LOADER */
+        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #030712; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: var(--font-tech); }
+        .loader-ring { width: 60px; height: 60px; border: 3px solid rgba(56,189,248,0.2); border-top: 3px solid var(--accent-cyan); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; box-shadow: var(--glow-cyan); }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader-text { color: var(--accent-cyan); letter-spacing: 3px; font-size: 14px; margin-bottom: 20px; font-weight: bold; }
+        .loader-bar-bg { width: 80%; max-width: 300px; height: 6px; background: #1e293b; border-radius: 10px; overflow: hidden; position: relative; }
+        .loader-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple)); width: 0%; transition: width 0.1s linear; box-shadow: 0 0 10px var(--accent-cyan); }
+        .loader-stats { display: flex; justify-content: space-between; width: 80%; max-width: 300px; margin-top: 8px; font-size: 10px; color: var(--text-muted); }
+
+        /* MOBILE WARNING */
+        #mobile-warning { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(3, 7, 18, 0.95); z-index: 9990; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px); padding: 20px; }
+        .warn-box { background: var(--bg-panel); border: 1px solid var(--accent-pink); padding: 30px; border-radius: 24px; text-align: center; max-width: 350px; box-shadow: 0 0 50px rgba(244, 114, 182, 0.2); }
+
+        .toggle-row { display:flex; justify-content:space-between; align-items:center; font-size:12px; color:#ccc; margin-bottom:10px; font-weight: bold;}
+        input[type=range] { width: 100%; flex-grow: 1; margin-left: 10px; accent-color: var(--accent-cyan); height: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="stars-bg" id="starsContainer"></div>
+
+    <div id="ui-layer">
+        <div class="panel-header" onclick="toggleUI()">
+            <div>
+                <h1 class="text-white text-xl font-bold font-tech tracking-wider">IPB <span style="color:var(--accent-cyan)">GALAXY</span></h1>
+                <div class="flex gap-2 items-center mt-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_8px_#4ade80]"></span>
+                    <span id="ui-status" class="text-[10px] text-gray-400 font-mono">ONLINE</span>
+                </div>
+            </div>
+            <i id="ui-toggle" class="ph-bold ph-caret-down"></i>
+        </div>
+
+        <div class="tab-group">
+            <button class="tab-btn active" onclick="switchTab('explorer')">EXPLORER</button>
+            <button class="tab-btn" onclick="switchTab('comparator')">COMPARE</button>
+            <button class="tab-btn" onclick="switchTab('pathfinder')">PATH</button>
+        </div>
+
+        <div class="scroll-content">
+            <div id="view-explorer" class="view-section active">
+                <div class="search-row">
+                    <input type="text" id="search" class="glass-input" placeholder="Nama / NIM..." autocomplete="off">
+                    <button class="search-btn" onclick="runSearch()"><i class="ph-bold ph-magnifying-glass"></i></button>
+                </div>
+
+                <div class="block-container">
+                    <div class="block-header" onclick="toggleBlock('stats-body')"><span>RELATION MATRIX</span> <i class="ph-bold ph-caret-down"></i></div>
+                    <div id="stats-body" class="block-body" style="padding:0">
+                        <div id="explorer-chart" class="echarts-wrapper" style="border-radius:0; height:180px;">
+                            <div class="flex items-center justify-center h-full text-gray-500 text-[10px]">NO DATA</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="block-container">
+                    <div class="block-header" onclick="toggleBlock('filter-body')">
+                        <span id="filter-header-txt">FILTERS & LAYOUT</span> <i class="ph-bold ph-caret-down"></i>
+                    </div>
+                    <div id="filter-body" class="block-body">
+                        <div class="toggle-row"><span>SHOW LABELS</span><input type="checkbox" id="show-labels-chk" checked onchange="toggleLabels()"></div>
+                        <div class="flex gap-2 mb-4">
+                            <select id="layout-mode" class="glass-input" style="padding:8px; font-size:11px;">
+                                <option value="GALAXY">🌌 Galaxy</option><option value="SPIRAL">🌀 Spiral</option><option value="STAR">☀️ Star</option>
+                            </select>
+                            <button class="glass-input" style="width:auto; font-weight:bold; background:rgba(255,255,255,0.1); font-size:11px;" onclick="renderGraph()">UPDATE</button>
+                        </div>
+                        <div class="text-[10px] text-gray-400 mb-1">MIN CONNECTION: <span id="slider-val" style="color:var(--accent-pink)">1</span></div>
+                        <input type="range" id="shared-slider" min="1" max="6" value="1" oninput="safeSetText('slider-val', this.value); renderGraph()">
+                        <div class="border-t border-[var(--glass-border)] pt-3 mt-3">
+                            <div id="filter-list" class="max-h-32 overflow-y-auto pr-1"><div class="text-center text-[10px] text-[var(--text-muted)] mt-2">Scan a student first</div></div>
+                        </div>
+                    </div>
+                </div>
+                <div><div class="text-[10px] font-bold text-gray-500 mb-2 tracking-widest">TOP CIRCLE</div><div id="leaderboard-list"></div></div>
+            </div>
+
+            <div id="view-comparator" class="view-section">
+                <div class="search-row">
+                    <input type="text" id="comp-input" class="glass-input" placeholder="Add Name (A, B, C...)">
+                    <button class="search-btn" onclick="addCompare()" style="background:var(--accent-purple)"><i class="ph-bold ph-plus"></i></button>
+                </div>
+                <div id="compare-list" class="flex flex-wrap gap-2 mb-2"></div>
+                <div class="block-container">
+                    <div class="block-header"><span>VISUALIZATION</span></div>
+                    <div class="block-body">
+                        <select id="comp-view-mode" class="glass-input mb-4" onchange="updateCompViewMode()">
+                            <option value="HEATMAP_2D">🟦 2D Heatmap (Flat)</option><option value="HEATMAP_3D">🧊 3D Matrix (Orbit)</option><option value="GRAPH">🕸️ Network Graph</option>
+                        </select>
+                        <div id="comp-2d-controls" class="hidden mb-4 p-3 bg-white/5 rounded-lg border border-white/5">
+                            <div class="text-[9px] font-bold text-gray-400 mb-2">OFFSET (GESER GRAFIK)</div>
+                            <div class="flex gap-2">
+                                <div class="w-1/2"><span class="text-[9px] text-gray-500">HORIZ</span><input type="range" min="0" max="800" value="450" oninput="updateCompLayout('left', this.value)"></div>
+                                <div class="w-1/2"><span class="text-[9px] text-gray-500">VERT</span><input type="range" min="0" max="200" value="50" oninput="updateCompLayout('bottom', this.value)"></div>
+                            </div>
+                        </div>
+                        <div id="comp-3d-controls" class="hidden mb-4 p-3 bg-white/5 rounded-lg border border-white/5">
+                            <div class="text-[9px] font-bold text-gray-400 mb-2">ZOOM LEVEL</div>
+                            <input type="range" min="100" max="600" value="300" oninput="updateCompLayout('distance', this.value)">
+                        </div>
+                        <button class="action-btn" onclick="runSmartComparator()">ANALYZE</button>
+                    </div>
+                </div>
+                <div id="comp-filter-area" class="block-container mt-4 hidden">
+                    <div class="block-header"><span>IGNORE COMMON COURSES</span></div>
+                    <div id="comp-filter-list" class="block-body max-h-40 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <div id="view-pathfinder" class="view-section">
+                <div class="block-container border border-[var(--accent-cyan)] shadow-[0_0_15px_rgba(56,189,248,0.1)]">
+                    <div class="block-body">
+                        <div class="text-[10px] font-bold text-gray-400 mb-2 font-tech">CONNECTION TRACER</div>
+                        <input type="text" id="path-start" class="glass-input mb-2" placeholder="Student A (Start)..." oninput="resetPathBtn()">
+                        <input type="text" id="path-end" class="glass-input mb-4" placeholder="Student B (End)..." oninput="resetPathBtn()">
+                        <button id="btn-path-action" class="action-btn" style="background:var(--accent-cyan); color:black;" onclick="runPathfinder()">FIND PATH <i class="ph-bold ph-arrow-right"></i></button>
+                    </div>
+                </div>
+                <div id="path-filter-container" class="block-container mt-4 hidden" style="border-color:var(--accent-pink)">
+                    <div class="block-header" style="color:var(--accent-pink)"><span>🚧 EXCLUDE BRIDGES</span></div>
+                    <div id="path-filter-list" class="block-body max-h-40 overflow-y-auto"></div>
+                </div>
+                <div id="path-results" class="mt-4"><div class="text-center text-xs text-[var(--text-muted)] font-mono py-8 opacity-50"><i class="ph-duotone ph-share-network text-4xl mb-2"></i><br>Trace links.</div></div>
+            </div>
+        </div>
+        <div class="footer-stats glass-panel" style="border-radius: 0;">
+            <span id="stat-target" class="font-mono text-[10px] text-[var(--accent-cyan)]">TARGET: -</span>
+            <span id="stat-nodes" class="font-mono text-[10px]">NODES: 0</span>
+        </div>
+    </div>
+
+    <div id="details-panel"><div class="detail-header"><h3 id="detail-title" class="text-base font-bold font-tech text-white truncate pr-4">-</h3><button onclick="document.getElementById('details-panel').style.display='none'" class="text-gray-400"><i class="ph-bold ph-x text-lg"></i></button></div><div id="detail-content" class="detail-body"></div></div>
+    
+    <div id="loader"><div class="loader-ring"></div><div class="loader-text">INITIALIZING...</div><div class="loader-bar-bg"><div class="loader-bar-fill" id="progress-fill"></div></div><div class="loader-stats"><span id="loader-pct">0%</span><span id="loader-speed">0.0 MB/s</span></div></div>
+    
+    <div id="mobile-warning"><div class="warn-box"><i class="ph-duotone ph-desktop text-4xl text-[var(--accent-pink)] mb-4"></i><h3 class="text-lg font-bold text-white mb-2 font-tech">DESKTOP RECOMMENDED</h3><p class="text-xs text-[var(--text-muted)] mb-6 leading-relaxed">Heavy WebGL rendering (50k+ nodes).<br>Use PC for best experience.</p><button class="action-btn" onclick="document.getElementById('mobile-warning').style.display='none'" style="font-size:10px; padding:10px;">I Understand</button></div></div>
+
+    <div id="container" style="width:100%; height:100%;"></div>
+
+    <script>
+        // SAFE DOM HELPER (PREVENTS CRASHES)
+        function safeSetText(id, text) { const el = document.getElementById(id); if(el) el.innerText = text; }
+        function safeSetHTML(id, html) { const el = document.getElementById(id); if(el) el.innerHTML = html; }
+        function toggleUI(forceCollapse = false) { const ui = document.getElementById('ui-layer'); if (forceCollapse) ui.classList.add('collapsed'); else ui.classList.toggle('collapsed'); }
+        function toggleBlock(id) { const el = document.getElementById(id); if(el) el.style.display = (el.style.display === 'none') ? 'block' : 'none'; }
+
+        // --- STARS ---
+        function createStars() { const c = document.getElementById('starsContainer'); for(let i=0; i<80; i++) { const s = document.createElement('div'); s.className = 'star'; const sz = Math.random()*2+1; s.style.width=sz+'px'; s.style.height=sz+'px'; s.style.left=Math.random()*100+'vw'; s.style.top=Math.random()*100+'vh'; s.style.animationDuration=(Math.random()*3+2)+'s'; s.style.animationDelay=Math.random()*5+'s'; c.appendChild(s); } } createStars();
+
+        // --- CORE ---
+        const CONFIG = { PATHS: { students: '../data/uni-galaxy/meta_students.dsv', courses: '../data/uni-galaxy/meta_courses.dsv', graphSC: '../data/uni-galaxy/graph_s_c.dsv', graphCS: '../data/uni-galaxy/graph_c_s.dsv' }, COLORS: { TARGET: '#FFD700', FRIEND_LOW: '#38bdf8', FRIEND_MID: '#c084fc', FRIEND_HIGH: '#f472b6', EDGE: '#334155' }, LIMITS: { MAX_NODES: 3000, TOP_FRIENDS_LIST: 50, TOP_HEATMAP: 100 } };
+        const DB = { students: [], courses: [], sc: [], cs: [] };
+        let renderer, graph, explorerChart, comparatorChart;
+        let currentMode = 'EXPLORER', currentTargetId = -1;
+        let activeCourses = [], compareIds = [], compExcludedCourses = new Set(), pathExcludedCourses = new Set();
+        let showLabels = true; 
+        let isMobile = window.innerWidth < 768;
+        let compSettings = isMobile ? { left: 0, bottom: 50, distance: 200 } : { left: 450, bottom: 50, distance: 300 };
+
+        // --- LOADER ---
+        let totalBytesLoaded = 0; const totalEstimatedSize = 8 * 1024 * 1024;
+        async function fetchWithProgress(url) {
+            try {
+                const start = Date.now(); const response = await fetch(url);
+                if (!response.ok) throw new Error("404");
+                const total = parseInt(response.headers.get('content-length') || totalEstimatedSize/4, 10);
+                let loaded = 0; const reader = response.body.getReader(); const chunks = [];
+                while(true) { const {done, value} = await reader.read(); if (done) break; chunks.push(value); loaded += value.length; updateGlobalProgress(value.length, start); }
+                let chunksAll = new Uint8Array(loaded); let position = 0;
+                for(let chunk of chunks) { chunksAll.set(chunk, position); position += chunk.length; }
+                return new TextDecoder("utf-8").decode(chunksAll);
+            } catch (e) { console.error(e); return ""; }
+        }
+        function updateGlobalProgress(chunkSize, startTime) {
+            totalBytesLoaded += chunkSize; const pct = Math.min(99, Math.round((totalBytesLoaded / totalEstimatedSize) * 100));
+            document.getElementById('progress-fill').style.width = pct + "%"; safeSetText('loader-pct', pct + "%");
+            const duration = (Date.now() - startTime) / 1000; const speed = (totalBytesLoaded / 1024 / 1024) / (duration || 1); 
+            safeSetText('loader-speed', speed.toFixed(1) + " MB/s");
+        }
+        async function init() {
+            try {
+                const [sT, cT, scT, csT] = await Promise.all([fetchWithProgress(CONFIG.PATHS.students), fetchWithProgress(CONFIG.PATHS.courses), fetchWithProgress(CONFIG.PATHS.graphSC), fetchWithProgress(CONFIG.PATHS.graphCS)]);
+                if(!sT || !cT) throw new Error("Data Missing");
+                DB.students = sT.split('\n'); DB.courses = cT.split('\n'); DB.sc = scT.split('\n'); DB.cs = csT.split('\n');
+                document.getElementById('progress-fill').style.width = "100%"; safeSetText('loader-pct', "100%");
+                setTimeout(() => { 
+                    document.getElementById('loader').style.display = 'none'; document.getElementById('search').disabled = false;
+                    if(isMobile) document.getElementById('mobile-warning').style.display = 'flex';
+                }, 500);
+            } catch (e) { alert("Data Load Failed."); }
+        }
+
+        function resetUI() {
+            if(renderer) { try { renderer.kill(); } catch(e){} renderer = null; }
+            if(comparatorChart) { try{ comparatorChart.dispose(); } catch(e){} comparatorChart = null; }
+            const container = document.getElementById('container'); if(container) container.innerHTML = '';
+            document.getElementById('details-panel').style.display = 'none';
+        }
+
+        // --- EXPLORER ---
+        function runSearch() {
+            const query = document.getElementById('search').value; if(!query) return;
+            const tId = DB.students.findIndex(l => l && l.toLowerCase().includes(query.toLowerCase()));
+            if (tId === -1) { alert("Student Not Found"); return; }
+            activeCourses = [];
+            const rawCourses = DB.sc[tId] ? DB.sc[tId].split(',') : [];
+            const filterContainer = document.getElementById('filter-list');
+            if (filterContainer) {
+                filterContainer.innerHTML = ''; 
+                rawCourses.forEach(cEnc => {
+                    if(!cEnc) return; const cIdx = parseInt(cEnc, 36);
+                    if(DB.courses[cIdx]) { const [cName] = DB.courses[cIdx].split('|'); activeCourses.push(cIdx); filterContainer.innerHTML += `<div class="course-check"><input type="checkbox" id="chk-${cIdx}" checked onchange="updateActiveCourses()"><label style="flex-grow:1; cursor:pointer; margin-left:8px; font-size:11px;">${cName}</label></div>`; }
+                });
+                safeSetText('filter-header-txt', `FILTERS (${activeCourses.length})`);
+            }
+            resetUI(); currentTargetId = tId; currentMode = 'EXPLORER';
+            toggleUI(true); renderGraph();
+        }
+        function updateActiveCourses() { activeCourses = []; document.querySelectorAll('#filter-list input[type=checkbox]').forEach(chk => { if(chk.checked) activeCourses.push(parseInt(chk.id.split('-')[1])); }); }
+        function toggleLabels() { showLabels = document.getElementById('show-labels-chk').checked; renderGraph(); }
+
+        function renderGraph() {
+            if(currentMode !== 'EXPLORER') return;
+            if(currentTargetId === -1) { const inputVal = document.getElementById('search').value; if(inputVal) { runSearch(); return; } return; }
+            safeSetText('ui-status', "RENDERING...");
+            setTimeout(() => {
+                resetUI(); 
+                if(!DB.students[currentTargetId]) return;
+                // @ts-ignore
+                graph = new graphology.Graph();
+                const [tName] = DB.students[currentTargetId].split('|');
+                safeSetText('stat-target', "TARGET: " + tName);
+                graph.addNode('CENTER', { label: tName, size: 25, color: CONFIG.COLORS.TARGET, x: 0, y: 0, zIndex: 100 });
+                const friendCounts = new Map();
+                activeCourses.forEach(cIdx => { if (DB.cs[cIdx]) { DB.cs[cIdx].split(',').forEach(sEnc => { const fid = parseInt(sEnc, 36); if (fid !== currentTargetId) friendCounts.set(fid, (friendCounts.get(fid) || 0) + 1); }); } });
+                const minShared = parseInt(document.getElementById('shared-slider').value);
+                const layoutMode = document.getElementById('layout-mode').value;
+                const sortedFriends = Array.from(friendCounts.entries()).sort((a,b) => b[1] - a[1]);
+                renderExplorerMatrix(sortedFriends);
+                const lbContainer = document.getElementById('leaderboard-list'); if(lbContainer) lbContainer.innerHTML = ''; 
+                let nodeCount = 0;
+                sortedFriends.forEach(([fid, count], idx) => {
+                    if (!DB.students[fid]) return;
+                    if (idx < CONFIG.LIMITS.TOP_FRIENDS_LIST && lbContainer) {
+                        const [fName] = DB.students[fid].split('|');
+                        lbContainer.innerHTML += `<div class="friend-rank" onclick="showDetails(${fid})"><span>#${idx+1} ${fName}</span> <span class="badge">${count}</span></div>`;
+                    }
+                    if (count >= minShared && nodeCount < CONFIG.LIMITS.MAX_NODES) {
+                        const [fName] = DB.students[fid].split('|');
+                        let color = CONFIG.COLORS.FRIEND_LOW; let size = 5;
+                        if(count >= 3) { color = CONFIG.COLORS.FRIEND_MID; size = 8; } if(count >= 5) { color = CONFIG.COLORS.FRIEND_HIGH; size = 12; }
+                        let x = 0, y = 0;
+                        if (layoutMode === 'GALAXY') { const angle = idx * 2.399; const r = 10 * Math.sqrt(idx + 1) + 40; x = Math.cos(angle) * r; y = Math.sin(angle) * r; }
+                        else if (layoutMode === 'SPIRAL') { const angle = idx * 0.5; const r = 40 + (5 * Math.sqrt(idx * 10)); x = Math.cos(angle) * r; y = Math.sin(angle) * r; }
+                        else { const angle = (idx / Math.min(sortedFriends.length, 3000)) * Math.PI * 2; x = Math.cos(angle) * 300; y = Math.sin(angle) * 300; }
+                        graph.addNode(`f${fid}`, { label: fName, size: size, color: color, x: x, y: y });
+                        graph.addEdge('CENTER', `f${fid}`, { size: count * 0.5, color: '#334155' });
+                        nodeCount++;
+                    }
+                });
+                safeSetText('stat-nodes', "NODES: " + (nodeCount + 1)); safeSetText('ui-status', "ONLINE");
+                startSigma();
+            }, 10);
+        }
+
+        function renderExplorerMatrix(sortedFriends) {
+            const topN = sortedFriends.slice(0, CONFIG.LIMITS.TOP_HEATMAP).map(x => x[0]); 
+            const dom = document.getElementById('explorer-chart'); if(explorerChart) try { explorerChart.dispose(); } catch(e){}
+            const data = []; let maxVal = 0;
+            const names = topN.map(fid => DB.students[fid] ? DB.students[fid].split('|')[0].split(' ')[0] : '?');
+            const activeSet = new Set(activeCourses);
+            topN.forEach((rid, i) => { topN.forEach((cid, j) => { if (i === j) return; const setA = new Set(DB.sc[rid].split(',')); const setB = new Set(DB.sc[cid].split(',')); const count = [...setA].filter(x => { const id = parseInt(x, 36); return setB.has(x) && activeSet.has(id); }).length; if (count > 0) { data.push([i, j, count]); if(count > maxVal) maxVal = count; } }); });
+            explorerChart = echarts.init(dom, 'dark');
+            explorerChart.setOption({ backgroundColor: '#00000000', tooltip: { formatter: (p) => `${names[p.value[0]]} & ${names[p.value[1]]}: ${p.value[2]}` }, visualMap: { max: Math.max(maxVal, 5), inRange: { color: ['#0f172a', '#38bdf8', '#c084fc', '#f472b6'] }, show: false }, xAxis3D: { type: 'category', data: names, show: false }, yAxis3D: { type: 'category', data: names, show: false }, zAxis3D: { type: 'value', axisLine:{lineStyle:{color:'#555'}} }, grid3D: { boxWidth: 200, boxDepth: 200, viewControl: { autoRotate: true, distance: 280 } }, series: [{ type: 'bar3D', data: data, shading: 'lambert', itemStyle: { opacity: 0.9 } }] });
+            window.addEventListener('resize', explorerChart.resize);
+        }
+
+        // --- COMPARATOR ---
+        function addCompare() { 
+            const val = document.getElementById('comp-input').value; const fid = DB.students.findIndex(l => l && l.toLowerCase().includes(val.toLowerCase()));
+            if(fid !== -1 && !compareIds.includes(fid)) { compareIds.push(fid); const name = DB.students[fid].split('|')[0]; document.getElementById('compare-list').innerHTML += `<div class="course-check" style="justify-content:space-between"><span>${name}</span> <span onclick="removeCompare(${fid}, this)" style="cursor:pointer;color:var(--accent-pink);font-weight:bold">×</span></div>`; document.getElementById('comp-input').value = ''; } else { alert("User not found / already added"); }
+        }
+        function removeCompare(fid, el) { compareIds = compareIds.filter(id => id !== fid); el.parentNode.remove(); }
+        function runSmartComparator() {
+            if(compareIds.length < 2) { alert("Min 2 people required"); return; }
+            resetUI(); currentMode = 'COMPARATOR'; toggleUI(true);
+            const filterCont = document.getElementById('comp-filter-list');
+            if(filterCont && (filterCont.innerHTML === '' || compExcludedCourses.size > 0)) {
+                const allCourses = new Set(); compareIds.forEach(fid => DB.sc[fid].split(',').forEach(c => { if(c) allCourses.add(parseInt(c, 36)); }));
+                filterCont.innerHTML = ''; document.getElementById('comp-filter-area').classList.remove('hidden'); compExcludedCourses.clear();
+                allCourses.forEach(cIdx => { if(DB.courses[cIdx]) { const [cName] = DB.courses[cIdx].split('|'); filterCont.innerHTML += `<div class="course-check"><input type="checkbox" checked onchange="toggleCompCourse(${cIdx}, this.checked)"><label style="flex-grow:1">${cName}</label></div>`; } });
+            }
+            renderComparatorVisuals();
+        }
+        function toggleCompCourse(cIdx, isChecked) { if(isChecked) compExcludedCourses.delete(cIdx); else compExcludedCourses.add(cIdx); renderComparatorVisuals(); }
+        function updateCompViewMode() {
+            const mode = document.getElementById('comp-view-mode').value;
+            const c2d = document.getElementById('comp-2d-controls'); const c3d = document.getElementById('comp-3d-controls');
+            if(mode === 'HEATMAP_2D') { c2d.classList.remove('hidden'); c3d.classList.add('hidden'); } else if(mode === 'HEATMAP_3D') { c2d.classList.add('hidden'); c3d.classList.remove('hidden'); } else { c2d.classList.add('hidden'); c3d.classList.add('hidden'); }
+        }
+        function updateCompLayout(prop, val) { compSettings[prop] = parseInt(val); if(comparatorChart) { const mode = document.getElementById('comp-view-mode').value; if(mode === 'HEATMAP_2D') comparatorChart.setOption({ grid: { left: compSettings.left, bottom: compSettings.bottom } }); else if(mode === 'HEATMAP_3D') comparatorChart.setOption({ grid3D: { viewControl: { distance: compSettings.distance } } }); } }
+        function renderComparatorVisuals() {
+            const viewType = document.getElementById('comp-view-mode').value; const container = document.getElementById('container'); container.innerHTML = ''; updateCompViewMode();
+            if(comparatorChart) try{ comparatorChart.dispose(); }catch(e){}
+            const names = compareIds.map(fid => DB.students[fid].split('|')[0].split(' ')[0]);
+            if(isMobile && compSettings.left === 450) compSettings.left = 0;
+            if (viewType === 'HEATMAP_2D') {
+                safeSetText('stat-target', "MODE: 2D HEATMAP"); comparatorChart = echarts.init(container, 'dark');
+                const data = []; let max = 0; compareIds.forEach((rid, i) => compareIds.forEach((cid, j) => { if(i === j) { data.push([i, j, 0]); return; } const setA = new Set(DB.sc[rid].split(',')), setB = new Set(DB.sc[cid].split(',')); const count = [...setA].filter(x => { const id=parseInt(x,36); return setB.has(x) && !compExcludedCourses.has(id); }).length; if(count > max) max = count; data.push([i, j, count]); }));
+                comparatorChart.setOption({ backgroundColor: '#0B0E14', tooltip: { position: 'top' }, grid: { height: '75%', top: '10%', right: '5%', left: compSettings.left, bottom: compSettings.bottom }, xAxis: { type: 'category', data: names, splitArea: { show: true }, axisLabel: {rotate:45, fontSize:10} }, yAxis: { type: 'category', data: names, splitArea: { show: true }, axisLabel: {fontSize:10} }, visualMap: { min: 0, max: max, calculable: true, orient: 'horizontal', left: 'center', bottom: '0%', inRange: { color: ['#0f172a', '#f472b6'] } }, series: [{ type: 'heatmap', data: data, label: { show: true, fontSize: 10 } }] });
+            } else if (viewType === 'HEATMAP_3D') {
+                safeSetText('stat-target', "MODE: 3D ORBIT"); comparatorChart = echarts.init(container, 'dark');
+                const data = []; compareIds.forEach((rid, i) => compareIds.forEach((cid, j) => { if(i === j) return; const setA = new Set(DB.sc[rid].split(',')), setB = new Set(DB.sc[cid].split(',')); const count = [...setA].filter(x => setB.has(x) && !compExcludedCourses.has(parseInt(x, 36))).length; if(count > 0) data.push([i, j, count]); }));
+                comparatorChart.setOption({ backgroundColor: '#0B0E14', tooltip: {}, visualMap: { max: 10, inRange: { color: [CONFIG.COLORS.FRIEND_LOW, CONFIG.COLORS.FRIEND_HIGH] } }, xAxis3D: { type: 'category', data: names, axisLabel: {rotate:45, fontSize:10} }, yAxis3D: { type: 'category', data: names, axisLabel: {rotate: -45, fontSize:10} }, zAxis3D: { type: 'value' }, grid3D: { boxWidth: 200, boxDepth: 200, left: '55%', width: '40%', viewControl: { autoRotate: true, distance: compSettings.distance } }, series: [{ type: 'bar3D', data: data, shading: 'lambert', itemStyle: { opacity: 0.9 } }] });
+            } else {
+                safeSetText('stat-target', "MODE: NETWORK");
+                // @ts-ignore
+                graph = new graphology.Graph();
+                compareIds.forEach((fid, i) => { const angle = (i/compareIds.length)*Math.PI*2; graph.addNode(`c${fid}`, {label:DB.students[fid].split('|')[0], size:15, color:CONFIG.COLORS.FRIEND_MID, x:Math.cos(angle)*150, y:Math.sin(angle)*150}); });
+                for(let i=0; i<compareIds.length; i++) { for(let j=i+1; j<compareIds.length; j++) { const setA = new Set(DB.sc[compareIds[i]].split(',')), setB = new Set(DB.sc[compareIds[j]].split(',')); const count = [...setA].filter(x => { const id = parseInt(x, 36); return setB.has(x) && !compExcludedCourses.has(id); }).length; if(count > 0) graph.addEdge(`c${compareIds[i]}`, `c${compareIds[j]}`, {color:'#555', size:count}); } }
+                startSigma();
+            }
+        }
+
+        // --- PATHFINDER ---
+        function resetPathBtn() { const btn = document.getElementById('btn-path-action'); btn.innerHTML = '<i class="ph-bold ph-magnifying-glass"></i> FIND CONNECTION'; btn.style.background = "var(--accent-cyan)"; pathExcludedCourses.clear(); document.getElementById('path-filter-container').classList.add('hidden'); }
+        async function runPathfinder() {
+            const startName = document.getElementById('path-start').value; const endName = document.getElementById('path-end').value; if(!startName || !endName) return;
+            const startId = DB.students.findIndex(l => l && l.toLowerCase().includes(startName.toLowerCase())); const endId = DB.students.findIndex(l => l && l.toLowerCase().includes(endName.toLowerCase()));
+            if(startId === -1 || endId === -1) { alert("Student not found."); return; } if(startId === endId) { alert("Same person."); return; }
+            resetUI(); currentMode = 'PATHFINDER'; safeSetHTML('path-results', '<div style="text-align:center; color:#EAB308; font-family:var(--font-tech)">TRACING NETWORK SIGNALS...</div>'); safeSetText('ui-status', "TRACING...");
+            setTimeout(() => {
+                const path = findPathBFS(startId, endId);
+                if (!path) { safeSetHTML('path-results', '<div style="text-align:center; color:#E91E63; font-family:var(--font-tech)">NO CONNECTION WITHIN 6 HOPS</div>'); safeSetText('ui-status', "NOT FOUND"); if(document.getElementById('btn-path-action').innerText.includes("UPDATE")) document.getElementById('path-filter-container').classList.remove('hidden'); return; }
+                const btn = document.getElementById('btn-path-action'); btn.innerHTML = '<i class="ph-bold ph-arrows-clockwise"></i> UPDATE PATH'; btn.style.background = "var(--accent-pink)";
+                toggleUI(true); renderPathFilterUI(path); renderPathVisuals(path);
+            }, 50);
+        }
+        function findPathBFS(start, end) {
+            if(start === end) return [start]; let queue = [start]; let visited = new Map(); visited.set(start, 0); let predecessors = new Map(); let head = 0;
+            while(head < queue.length) { if(queue.length > 50000) return null; const curr = queue[head++]; const depth = visited.get(curr); if (depth >= 6) continue; if (curr === end) { let path = [end]; let temp = end; while(temp !== start) { temp = predecessors.get(temp); path.unshift(temp); } return path; } const myCourses = DB.sc[curr].split(','); for (let cEnc of myCourses) { if (!cEnc) continue; const cIdx = parseInt(cEnc, 36); if (pathExcludedCourses.has(cIdx)) continue; if (DB.cs[cIdx]) { const peers = DB.cs[cIdx].split(','); for (let pEnc of peers) { const pId = parseInt(pEnc, 36); if (!visited.has(pId)) { visited.set(pId, depth + 1); predecessors.set(pId, curr); queue.push(pId); if(pId === end) { let path = [end]; let temp = end; while(temp !== start) { temp = predecessors.get(temp); path.unshift(temp); } return path; } } } } } } return null;
+        }
+        function renderPathFilterUI(path) { const container = document.getElementById('path-filter-container'); const list = document.getElementById('path-filter-list'); container.classList.remove('hidden'); list.innerHTML = ''; const usedCourses = new Set(); for(let i=0; i<path.length-1; i++) { const u = path[i]; const v = path[i+1]; const shared = getSharedCoursesIdx(u, v); shared.forEach(c => usedCourses.add(c)); } usedCourses.forEach(cIdx => { const [cName] = DB.courses[cIdx].split('|'); const isChecked = !pathExcludedCourses.has(cIdx); list.innerHTML += `<div class="course-check"><input type="checkbox" id="pathchk-${cIdx}" ${isChecked ? 'checked' : ''} onchange="togglePathCourse(${cIdx}, this.checked)"><label for="pathchk-${cIdx}" style="flex-grow:1; cursor:pointer;">${cName}</label></div>`; }); }
+        function togglePathCourse(cIdx, isChecked) { if(isChecked) pathExcludedCourses.delete(cIdx); else pathExcludedCourses.add(cIdx); }
+        function getSharedCoursesIdx(idA, idB) { const setA = new Set(DB.sc[idA].split(',')); const setB = new Set(DB.sc[idB].split(',')); const shared = []; setA.forEach(c => { if(setB.has(c)) shared.push(parseInt(c, 36)); }); return shared; }
+        function getSharedCoursesNames(idA, idB) { const idxs = getSharedCoursesIdx(idA, idB); const valid = idxs.filter(c => !pathExcludedCourses.has(c)); return valid.map(c => DB.courses[c].split('|')[0]); }
+        function renderPathVisuals(path) {
+            const resultsDiv = document.getElementById('path-results'); resultsDiv.innerHTML = '';
+            path.forEach((nodeId, idx) => { const name = DB.students[nodeId].split('|')[0]; let className = 'path-step'; if(idx === 0) className += ' start'; else if(idx === path.length - 1) className += ' end'; else className += ' mid'; let connectionInfo = ''; if(idx > 0) { const prevId = path[idx-1]; const sharedNames = getSharedCoursesNames(prevId, nodeId); connectionInfo = `<div class="path-arrow">↓ Connected via ${sharedNames.length} courses</div><div class="path-courses">${sharedNames.slice(0, 3).join(', ')} ${sharedNames.length > 3 ? `+${sharedNames.length-3} more` : ''}</div>`; } resultsDiv.innerHTML += `<div class="${className}" style="animation-delay: ${idx * 0.1}s"><div style="font-weight:bold; font-size:12px; color:#fff">${name}</div>${connectionInfo}</div>`; });
+            if(renderer) try { renderer.kill(); } catch(e){} document.getElementById('container').innerHTML = '';
+            // @ts-ignore
+            graph = new graphology.Graph();
+            safeSetText('stat-target', `PATH LENGTH: ${path.length - 1}`); safeSetText('stat-nodes', `NODES: ${path.length}`); safeSetText('ui-status', "PATH SECURED");
+            path.forEach((nodeId, idx) => { const name = DB.students[nodeId].split('|')[0]; let color = CONFIG.COLORS.FRIEND_MID; let size = 20; if(idx === 0) { color = CONFIG.COLORS.FRIEND_LOW; size = 25; } else if(idx === path.length - 1) { color = CONFIG.COLORS.FRIEND_HIGH; size = 25; } const x = (idx * 200) - ((path.length * 200) / 2); graph.addNode(`p${nodeId}`, { label: name, size: size, color: color, x: x, y: 0 }); if(idx > 0) graph.addEdge(`p${path[idx-1]}`, `p${nodeId}`, { size: 4, color: '#475569' }); });
+            // @ts-ignore
+            renderer = new Sigma(graph, document.getElementById('container'), { renderEdgeLabels: false, labelColor: { color: "#fff" }, labelFont: "Inter, sans-serif", hoverRenderer: (context, data, settings) => { const size = settings.labelSize; const font = settings.labelFont; const weight = settings.labelWeight; context.font = `${weight} ${size}px ${font}`; const width = context.measureText(data.label).width + 10; context.beginPath(); context.arc(data.x, data.y, data.size + 8, 0, Math.PI * 2); context.fillStyle = 'rgba(255, 255, 255, 0.1)'; context.fill(); context.fillStyle = data.color; context.beginPath(); context.arc(data.x, data.y, data.size, 0, Math.PI * 2); context.fill(); context.fillStyle = '#000'; context.fillRect(data.x + data.size + 3, data.y - size/1.5, width, size + 5); context.fillStyle = '#fff'; context.fillText(data.label, data.x + data.size + 8, data.y + size/3); } });
+            renderer.getCamera().animate({ x: 0, y: 0, ratio: 1.2 }, { duration: 500 });
+            renderer.on('clickNode', ({ node }) => { if(currentMode!=='COMPARATOR') showDetails(parseInt(node.substring(1))); });
+        }
+
+        // --- COMMON ---
+        function startSigma() {
+            // @ts-ignore
+            renderer = new Sigma(graph, document.getElementById('container'), { renderEdgeLabels: false, labelDensity: 0.05, labelColor: { color: "#fff" }, labelFont: "Inter, sans-serif", renderLabels: showLabels, hoverRenderer: (context, data, settings) => { const size = settings.labelSize; const font = settings.labelFont; const weight = settings.labelWeight; context.font = `${weight} ${size}px ${font}`; const width = context.measureText(data.label).width + 10; context.fillStyle = '#fff'; context.beginPath(); context.arc(data.x, data.y, data.size + 5, 0, Math.PI * 2); context.fill(); context.fillRect(data.x + data.size + 3, data.y - size/1.5, width, size + 5); context.fillStyle = '#000'; context.fillText(data.label, data.x + data.size + 8, data.y + size/3); } });
+            renderer.on('clickNode', ({ node }) => { if(currentMode!=='COMPARATOR' && node!=='CENTER') showDetails(parseInt(node.substring(1))); });
+        }
+        function showDetails(fid) {
+            const container = document.getElementById('detail-content'); container.innerHTML = '';
+            safeSetText('detail-title', DB.students[fid].split('|')[0]); document.getElementById('details-panel').style.display = 'flex';
+            if(currentMode === 'EXPLORER' && currentTargetId !== -1) {
+                const targetSet = new Set(DB.sc[currentTargetId].split(',')); const activeSet = new Set(activeCourses); const friendCourses = DB.sc[fid].split(','); const mActive=[], mHidden=[], mUnique=[];
+                friendCourses.forEach(cEnc => { if(!cEnc) return; const cIdx = parseInt(cEnc, 36); if(DB.courses[cIdx]) { const cData = DB.courses[cIdx].split('|'); const obj = {name:cData[0], sks:cData[2]}; if(targetSet.has(cEnc)) { if(activeSet.has(cIdx)) mActive.push(obj); else mHidden.push(obj); } else mUnique.push(obj); } });
+                if(mActive.length) { container.innerHTML += `<div class="section-title">SHARED COURSES (${mActive.length})</div>`; mActive.forEach(c=>container.innerHTML+=`<div class="course-card card-active"><div>${c.name}</div><div style="font-size:9px; color:var(--text-muted)">${c.sks}</div><span class="tag-match">MATCH</span></div>`); }
+                if(mHidden.length) { container.innerHTML += `<div class="section-title">SHARED (HIDDEN)</div>`; mHidden.forEach(c=>container.innerHTML+=`<div class="course-card"><div>${c.name}</div><div style="font-size:9px; color:var(--text-muted)">${c.sks}</div></div>`); }
+                if(mUnique.length) { container.innerHTML += `<div class="section-title">OTHER COURSES</div>`; mUnique.forEach(c=>container.innerHTML+=`<div class="course-card card-unique"><div>${c.name}</div><div style="font-size:9px; color:var(--text-muted)">${c.sks}</div></div>`); }
+            } else { container.innerHTML += `<div class="section-title">ENROLLED COURSES</div>`; const courses = DB.sc[fid].split(','); courses.forEach(cEnc => { if(!cEnc) return; const cIdx = parseInt(cEnc, 36); if(DB.courses[cIdx]) { const cData = DB.courses[cIdx].split('|'); container.innerHTML += `<div class="course-card"><div>${cData[0]}</div><div style="font-size:9px; color:var(--text-muted)">${cData[2]}</div></div>`; } }); }
+        }
+        window.switchTab = (tab) => { resetUI(); if(explorerChart) try{ explorerChart.dispose(); explorerChart=null; }catch(e){} document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); event.target.classList.add('active'); document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active')); document.getElementById(`view-${tab}`).classList.add('active'); }
+        window.toggleAllFilters = (s) => { document.querySelectorAll('#filter-list input').forEach(c => c.checked = s); updateActiveCourses(); }
+        document.getElementById('search').addEventListener('keypress', (e) => { if(e.key==='Enter') runSearch() });
+        document.getElementById('comp-input').addEventListener('keypress', (e) => { if(e.key==='Enter') addCompare() });
+        document.getElementById('path-end').addEventListener('keypress', (e) => { if(e.key==='Enter') runPathfinder() });
+        init();
+    </script>
+</body>
+</html>

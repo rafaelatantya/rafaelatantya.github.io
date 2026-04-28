@@ -1,108 +1,341 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Rafael Atantya • Data Terminal</title>
-    
+
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://rafaelatantya.github.io/">
     <meta property="og:title" content="Rafael Atantya • Data Terminal">
-    <meta property="og:description" content="Access the Mainframe. Interactive Data Visualization Portfolio: Course Island, Living Jungle, & Uni Galaxy.">
-    <meta property="og:image" content="https://rafaelatantya.github.io/api/etc/thumbnail.png">
+    <meta property="og:description"
+        content="Access the Mainframe. Interactive Data Visualization Portfolio: Course Island, Living Jungle, & Uni Galaxy.">
+    <meta property="og:image" content="https://rafaelatantya.github.io/data/etc/thumbnail.png">
 
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://rafaelatantya.github.io/">
     <meta property="twitter:title" content="Rafael Atantya • Data Terminal">
     <meta property="twitter:description" content="Access the Mainframe. Interactive Data Visualization Portfolio.">
-    <meta property="twitter:image" content="https://rafaelatantya.github.io/api/etc/thumbnail.png">
+    <meta property="twitter:image" content="https://rafaelatantya.github.io/data/etc/thumbnail.png">
 
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Syncopate:wght@400;700&display=swap"
+        rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
         /* --- CRT & NOISE EFFECTS --- */
-        :root { --bg-color: #030303; --term-green: #33ff00; --term-blue: #00f3ff; --term-pink: #ff0055; }
-        body { background-color: var(--bg-color); color: white; font-family: 'JetBrains Mono', monospace; overflow-x: hidden; }
-        
+        :root {
+            --bg-color: #030303;
+            --term-green: #33ff00;
+            --term-blue: #00f3ff;
+            --term-pink: #ff0055;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: white;
+            font-family: 'JetBrains Mono', monospace;
+            overflow-x: hidden;
+        }
+
         /* Scanlines */
-        .scanlines { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2)); background-size: 100% 4px; animation: scanmove 20s linear infinite; opacity: 0.6; }
-        
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 0.2));
+            background-size: 100% 4px;
+            animation: scanmove 20s linear infinite;
+            opacity: 0.6;
+        }
+
         /* Noise */
-        .noise { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; opacity: 0.05; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E"); }
+        .noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 40;
+            opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
+        }
 
         /* Vignette */
-        .vignette { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 45; background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,1) 100%); }
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 45;
+            background: radial-gradient(circle, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 1) 100%);
+        }
 
         /* --- CARD STYLES --- */
         .data-card {
-            background: rgba(10, 10, 10, 0.8); border: 1px solid #333; position: relative; overflow: hidden;
-            transition: all 0.1s ease; transform-style: preserve-3d; perspective: 1000px;
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid #333;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.1s ease;
+            transform-style: preserve-3d;
+            perspective: 1000px;
         }
-        .data-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(45deg, transparent, rgba(255,255,255,0.03), transparent); transform: translateX(-100%); transition: 0.5s; }
-        .data-card:hover::before { transform: translateX(100%); }
-        .card-content { position: relative; z-index: 10; transform: translateZ(20px); }
-        
+
+        .data-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+            transform: translateX(-100%);
+            transition: 0.5s;
+        }
+
+        .data-card:hover::before {
+            transform: translateX(100%);
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 10;
+            transform: translateZ(20px);
+        }
+
         /* --- ANIMATIONS INSIDE CARDS --- */
         /* ISLAND WAVE */
-        .wave-box { position: absolute; bottom: 0; left: 0; width: 100%; height: 40%; overflow: hidden; opacity: 0.3; }
-        .wave { position: absolute; bottom: 0; left: 0; width: 200%; height: 100%; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%2300f3ff" fill-opacity="1" d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>'); background-repeat: repeat-x; animation: wave 10s linear infinite; }
-        @keyframes wave { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .wave-box {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40%;
+            overflow: hidden;
+            opacity: 0.3;
+        }
+
+        .wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%2300f3ff" fill-opacity="1" d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>');
+            background-repeat: repeat-x;
+            animation: wave 10s linear infinite;
+        }
+
+        @keyframes wave {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
 
         /* JUNGLE RADAR */
-        .radar-box { position: absolute; inset: 0; overflow: hidden; }
-        .radar-line { position: absolute; top: 50%; left: 50%; width: 50%; height: 2px; background: linear-gradient(90deg, transparent, #33ff00); transform-origin: left center; animation: radar-spin 4s linear infinite; opacity: 0.5; box-shadow: 0 0 15px #33ff00; }
-        .radar-grid { position: absolute; inset: 0; background-image: radial-gradient(rgba(51, 255, 0, 0.1) 1px, transparent 1px); background-size: 30px 30px; opacity: 0.2; }
-        @keyframes radar-spin { from { transform: translateY(-50%) rotate(0deg); } to { transform: translateY(-50%) rotate(360deg); } }
+        .radar-box {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+
+        .radar-line {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #33ff00);
+            transform-origin: left center;
+            animation: radar-spin 4s linear infinite;
+            opacity: 0.5;
+            box-shadow: 0 0 15px #33ff00;
+        }
+
+        .radar-grid {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(51, 255, 0, 0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            opacity: 0.2;
+        }
+
+        @keyframes radar-spin {
+            from {
+                transform: translateY(-50%) rotate(0deg);
+            }
+
+            to {
+                transform: translateY(-50%) rotate(360deg);
+            }
+        }
 
         /* GALAXY NODES */
-        #galaxy-mini-canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.4; pointer-events: none; }
+        #galaxy-mini-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.4;
+            pointer-events: none;
+        }
 
         /* --- SOCIAL DOCK --- */
         .dock-item {
-            position: relative; transition: all 0.3s cubic-bezier(0.25, 1.5, 0.5, 1);
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.25, 1.5, 0.5, 1);
         }
-        .dock-item:hover { transform: translateY(-10px) scale(1.1); color: white; text-shadow: 0 0 10px white; }
+
+        .dock-item:hover {
+            transform: translateY(-10px) scale(1.1);
+            color: white;
+            text-shadow: 0 0 10px white;
+        }
+
         .dock-tooltip {
-            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) translateY(10px);
-            background: white; color: black; font-weight: bold; font-size: 10px; padding: 4px 8px;
-            opacity: 0; transition: 0.2s; pointer-events: none; white-space: nowrap; margin-bottom: 8px;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: white;
+            color: black;
+            font-weight: bold;
+            font-size: 10px;
+            padding: 4px 8px;
+            opacity: 0;
+            transition: 0.2s;
+            pointer-events: none;
+            white-space: nowrap;
+            margin-bottom: 8px;
         }
-        .dock-item:hover .dock-tooltip { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        .dock-item:hover .dock-tooltip {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
 
         /* --- UTILS --- */
-        .glitch-text { position: relative; animation: glitch-skew 3s infinite linear alternate-reverse; }
-        .glitch-text::before, .glitch-text::after { content: attr(data-text); position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0.8; }
-        .glitch-text::before { color: #ff0055; z-index: -1; transform: translate(-2px, 0); clip-path: inset(0 0 0 0); animation: glitch-anim 2s infinite linear alternate-reverse; }
-        .glitch-text::after { color: #00f3ff; z-index: -2; transform: translate(2px, 0); clip-path: inset(0 0 0 0); animation: glitch-anim 2.5s infinite linear alternate-reverse; }
-        @keyframes glitch-anim { 0% { clip-path: inset(10% 0 80% 0); } 20% { clip-path: inset(80% 0 10% 0); } 40% { clip-path: inset(40% 0 50% 0); } 60% { clip-path: inset(10% 0 50% 0); } 80% { clip-path: inset(90% 0 5% 0); } 100% { clip-path: inset(30% 0 30% 0); } }
+        .glitch-text {
+            position: relative;
+            animation: glitch-skew 3s infinite linear alternate-reverse;
+        }
+
+        .glitch-text::before,
+        .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.8;
+        }
+
+        .glitch-text::before {
+            color: #ff0055;
+            z-index: -1;
+            transform: translate(-2px, 0);
+            clip-path: inset(0 0 0 0);
+            animation: glitch-anim 2s infinite linear alternate-reverse;
+        }
+
+        .glitch-text::after {
+            color: #00f3ff;
+            z-index: -2;
+            transform: translate(2px, 0);
+            clip-path: inset(0 0 0 0);
+            animation: glitch-anim 2.5s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% {
+                clip-path: inset(10% 0 80% 0);
+            }
+
+            20% {
+                clip-path: inset(80% 0 10% 0);
+            }
+
+            40% {
+                clip-path: inset(40% 0 50% 0);
+            }
+
+            60% {
+                clip-path: inset(10% 0 50% 0);
+            }
+
+            80% {
+                clip-path: inset(90% 0 5% 0);
+            }
+
+            100% {
+                clip-path: inset(30% 0 30% 0);
+            }
+        }
 
         /* CURSOR */
-        #cursor-dot { width: 8px; height: 8px; background: white; position: fixed; border-radius: 50%; pointer-events: none; z-index: 9999; mix-blend-mode: difference; transition: transform 0.1s; }
-        #cursor-ring { width: 40px; height: 40px; border: 1px solid white; position: fixed; border-radius: 50%; pointer-events: none; z-index: 9998; mix-blend-mode: difference; transition: left 0.15s, top 0.15s, transform 0.3s; transform: translate(-50%, -50%); }
+        #cursor-dot {
+            width: 8px;
+            height: 8px;
+            background: white;
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: difference;
+            transition: transform 0.1s;
+        }
+
+        #cursor-ring {
+            width: 40px;
+            height: 40px;
+            border: 1px solid white;
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            mix-blend-mode: difference;
+            transition: left 0.15s, top 0.15s, transform 0.3s;
+            transform: translate(-50%, -50%);
+        }
     </style>
 </head>
+
 <body class="flex flex-col min-h-screen">
 
     <div class="scanlines"></div>
     <div class="noise"></div>
     <div class="vignette"></div>
-    
+
     <div id="cursor-dot"></div>
     <div id="cursor-ring"></div>
 
     <canvas id="bg-network" class="fixed inset-0 z-0 pointer-events-none"></canvas>
 
     <div class="relative z-10 flex-1 flex flex-col p-6 md:p-12 max-w-7xl mx-auto w-full">
-        
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 border-b border-white/10 pb-6">
+
+        <header
+            class="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 border-b border-white/10 pb-6">
             <div>
                 <div class="text-[10px] text-gray-500 mb-1 tracking-widest font-bold">SYSTEM_READY // 2026</div>
-                <h1 class="text-4xl md:text-6xl font-black tracking-tighter uppercase glitch-text" data-text="RAFAEL ATANTYA" style="font-family: 'Syncopate', sans-serif;">
+                <h1 class="text-4xl md:text-6xl font-black tracking-tighter uppercase glitch-text"
+                    data-text="RAFAEL ATANTYA" style="font-family: 'Syncopate', sans-serif;">
                     RAFAEL ATANTYA
                 </h1>
-                <p class="text-xs text-[#00f3ff] mt-2 font-bold tracking-widest">> DATA SCIENTIST // CREATIVE DEVELOPER</p>
+                <p class="text-xs text-[#00f3ff] mt-2 font-bold tracking-widest">> DATA ENTHUSIAST // FULL STACK
+                    DEVELOPER</p>
             </div>
             <div class="mt-4 md:mt-0 text-right">
                 <div id="clock" class="text-xl font-bold font-mono">00:00:00</div>
@@ -111,26 +344,34 @@
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
-            
-            <a href="course-explorer.html" class="data-card group h-[400px] flex flex-col justify-end p-6 rounded-sm hover:border-[#00f3ff] cursor-none" id="card-island">
+
+            <a href="course-island/"
+                class="data-card group h-[400px] flex flex-col justify-end p-6 rounded-sm hover:border-[#00f3ff] cursor-none"
+                id="card-island">
                 <div class="absolute inset-0 z-0 bg-blue-900/10">
                     <div class="wave-box">
                         <div class="wave"></div>
                         <div class="wave" style="animation-duration: 7s; opacity: 0.5; bottom: -10px;"></div>
                     </div>
                 </div>
-                
+
                 <div class="card-content">
-                    <div class="text-[#00f3ff] text-xs font-bold mb-2 tracking-widest border border-[#00f3ff] inline-block px-2 py-1">PROJECT_001</div>
+                    <div
+                        class="text-[#00f3ff] text-xs font-bold mb-2 tracking-widest border border-[#00f3ff] inline-block px-2 py-1">
+                        PROJECT_001</div>
                     <h2 class="text-3xl font-bold mb-2 group-hover:text-[#00f3ff] transition">COURSE ISLAND</h2>
-                    <p class="text-xs text-gray-400 leading-relaxed mb-4">Complete IPB course database visualized as a dynamic fluid archipelago system.</p>
-                    <div class="flex items-center gap-2 text-xs font-bold uppercase group-hover:translate-x-2 transition">
+                    <p class="text-xs text-gray-400 leading-relaxed mb-4">Complete IPB course database visualized as a
+                        dynamic fluid archipelago system.</p>
+                    <div
+                        class="flex items-center gap-2 text-xs font-bold uppercase group-hover:translate-x-2 transition">
                         [ ACCESS TERMINAL ]
                     </div>
                 </div>
             </a>
 
-            <a href="surveillance.html" class="data-card group h-[400px] flex flex-col justify-end p-6 rounded-sm hover:border-[#33ff00] cursor-none" id="card-jungle">
+            <a href="surveillance/"
+                class="data-card group h-[400px] flex flex-col justify-end p-6 rounded-sm hover:border-[#33ff00] cursor-none"
+                id="card-jungle">
                 <div class="absolute inset-0 z-0 bg-green-900/10">
                     <div class="radar-box">
                         <div class="radar-grid"></div>
@@ -139,25 +380,35 @@
                 </div>
 
                 <div class="card-content">
-                    <div class="text-[#33ff00] text-xs font-bold mb-2 tracking-widest border border-[#33ff00] inline-block px-2 py-1">PROJECT_002</div>
+                    <div
+                        class="text-[#33ff00] text-xs font-bold mb-2 tracking-widest border border-[#33ff00] inline-block px-2 py-1">
+                        PROJECT_002</div>
                     <h2 class="text-3xl font-bold mb-2 group-hover:text-[#33ff00] transition">LIVING JUNGLE</h2>
-                    <p class="text-xs text-gray-400 leading-relaxed mb-4">Real-time surveillance & traffic monitoring system embedded in a bio-digital forest.</p>
-                    <div class="flex items-center gap-2 text-xs font-bold uppercase group-hover:translate-x-2 transition">
+                    <p class="text-xs text-gray-400 leading-relaxed mb-4">Real-time surveillance & traffic monitoring
+                        system embedded in a bio-digital forest.</p>
+                    <div
+                        class="flex items-center gap-2 text-xs font-bold uppercase group-hover:translate-x-2 transition">
                         [ INITIATE SCAN ]
                     </div>
                 </div>
             </a>
 
-            <a href="galaxy.html" class="data-card group h-[400px] flex flex-col justify-end p-6 rounded-sm hover:border-[#ff0055] cursor-none" id="card-galaxy">
+            <a href="galaxy/"
+                class="data-card group h-[400px] flex flex-col justify-end p-6 rounded-sm hover:border-[#ff0055] cursor-none"
+                id="card-galaxy">
                 <div class="absolute inset-0 z-0 bg-purple-900/10">
                     <canvas id="galaxy-mini-canvas"></canvas>
                 </div>
 
                 <div class="card-content">
-                    <div class="text-[#ff0055] text-xs font-bold mb-2 tracking-widest border border-[#ff0055] inline-block px-2 py-1">PROJECT_003</div>
+                    <div
+                        class="text-[#ff0055] text-xs font-bold mb-2 tracking-widest border border-[#ff0055] inline-block px-2 py-1">
+                        PROJECT_003</div>
                     <h2 class="text-3xl font-bold mb-2 group-hover:text-[#ff0055] transition">UNI GALAXY</h2>
-                    <p class="text-xs text-gray-400 leading-relaxed mb-4">2D Network Graph mapping student relationships and shortest path algorithms.</p>
-                    <div class="flex items-center gap-2 text-xs font-bold uppercase group-hover:translate-x-2 transition">
+                    <p class="text-xs text-gray-400 leading-relaxed mb-4">2D Network Graph mapping student relationships
+                        and shortest path algorithms.</p>
+                    <div
+                        class="flex items-center gap-2 text-xs font-bold uppercase group-hover:translate-x-2 transition">
                         [ LAUNCH MAP ]
                     </div>
                 </div>
@@ -166,8 +417,9 @@
         </div>
 
         <div class="mt-auto flex justify-center">
-            <div class="glass-panel px-8 py-4 rounded-full border border-white/10 bg-black/50 backdrop-blur-md flex gap-8 items-center" id="social-dock">
-                </div>
+            <div class="glass-panel px-8 py-4 rounded-full border border-white/10 bg-black/50 backdrop-blur-md flex gap-8 items-center"
+                id="social-dock">
+            </div>
         </div>
 
     </div>
@@ -191,7 +443,7 @@
         // =================================================================
         // 2. INITIALIZATION
         // =================================================================
-        
+
         // --- Socials Renderer ---
         function initSocials() {
             const dock = document.getElementById('social-dock');
@@ -206,7 +458,7 @@
             ];
 
             links.forEach(link => {
-                if(CONFIG.socials[link.id]) {
+                if (CONFIG.socials[link.id]) {
                     const a = document.createElement('a');
                     a.href = CONFIG.socials[link.id];
                     a.target = "_blank";
@@ -269,7 +521,7 @@
             const ctx = canvas.getContext('2d');
             let w, h;
             let particles = [];
-            
+
             function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
             window.addEventListener('resize', resize);
             resize();
@@ -283,27 +535,27 @@
                 }
                 update() {
                     this.x += this.vx; this.y += this.vy;
-                    if(this.x < 0 || this.x > w) this.vx *= -1;
-                    if(this.y < 0 || this.y > h) this.vy *= -1;
+                    if (this.x < 0 || this.x > w) this.vx *= -1;
+                    if (this.y < 0 || this.y > h) this.vy *= -1;
                 }
             }
 
-            for(let i=0; i<60; i++) particles.push(new Node());
+            for (let i = 0; i < 60; i++) particles.push(new Node());
 
             function animate() {
                 ctx.clearRect(0, 0, w, h);
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-                
-                for(let i=0; i<particles.length; i++) {
+
+                for (let i = 0; i < particles.length; i++) {
                     const p = particles[i];
                     p.update();
-                    ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI*2); ctx.fill();
-                    
-                    for(let j=i; j<particles.length; j++) {
+                    ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI * 2); ctx.fill();
+
+                    for (let j = i; j < particles.length; j++) {
                         const p2 = particles[j];
                         const d = Math.hypot(p.x - p2.x, p.y - p2.y);
-                        if(d < 150) {
+                        if (d < 150) {
                             ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
                         }
                     }
@@ -318,7 +570,7 @@
             const canvas = document.getElementById('galaxy-mini-canvas');
             const ctx = canvas.getContext('2d');
             let w, h;
-            
+
             // Resize observer for the card size
             const resizeObserver = new ResizeObserver(entries => {
                 for (let entry of entries) {
@@ -330,12 +582,12 @@
 
             const nodes = [];
             // Create static constellation
-            for(let i=0; i<20; i++) {
+            for (let i = 0; i < 20; i++) {
                 nodes.push({
-                    x: Math.random() * 300, 
-                    y: Math.random() * 300, 
-                    vx: (Math.random()-0.5)*0.5, 
-                    vy: (Math.random()-0.5)*0.5
+                    x: Math.random() * 300,
+                    y: Math.random() * 300,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5
                 });
             }
 
@@ -343,18 +595,18 @@
                 ctx.clearRect(0, 0, w, h);
                 ctx.fillStyle = '#ff0055';
                 ctx.strokeStyle = 'rgba(255, 0, 85, 0.3)';
-                
+
                 nodes.forEach((n, i) => {
                     n.x += n.vx; n.y += n.vy;
-                    if(n.x < 0 || n.x > w) n.vx *=-1;
-                    if(n.y < 0 || n.y > h) n.vy *=-1;
+                    if (n.x < 0 || n.x > w) n.vx *= -1;
+                    if (n.y < 0 || n.y > h) n.vy *= -1;
 
-                    ctx.beginPath(); ctx.arc(n.x, n.y, 2, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(n.x, n.y, 2, 0, Math.PI * 2); ctx.fill();
 
                     // Connect neighbors
                     nodes.forEach(n2 => {
                         const d = Math.hypot(n.x - n2.x, n.y - n2.y);
-                        if(d < 60) {
+                        if (d < 60) {
                             ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(n2.x, n2.y); ctx.stroke();
                         }
                     });
@@ -371,4 +623,5 @@
 
     </script>
 </body>
+
 </html>
