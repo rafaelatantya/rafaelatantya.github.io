@@ -253,7 +253,10 @@
         function createStars() { const c = document.getElementById('starsContainer'); for(let i=0; i<80; i++) { const s = document.createElement('div'); s.className = 'star'; const sz = Math.random()*2+1; s.style.width=sz+'px'; s.style.height=sz+'px'; s.style.left=Math.random()*100+'vw'; s.style.top=Math.random()*100+'vh'; s.style.animationDuration=(Math.random()*3+2)+'s'; s.style.animationDelay=Math.random()*5+'s'; c.appendChild(s); } } createStars();
 
         // --- CORE ---
-        const CONFIG = { PATHS: { students: '../data/uni-galaxy/meta_students.dsv', courses: '../data/uni-galaxy/meta_courses.dsv', graphSC: '../data/uni-galaxy/graph_s_c.dsv', graphCS: '../data/uni-galaxy/graph_c_s.dsv' }, COLORS: { TARGET: '#FFD700', FRIEND_LOW: '#38bdf8', FRIEND_MID: '#c084fc', FRIEND_HIGH: '#f472b6', EDGE: '#334155' }, LIMITS: { MAX_NODES: 3000, TOP_FRIENDS_LIST: 50, TOP_HEATMAP: 100 } };
+        const YEAR = "2026";
+        const SEMESTER = "genap";
+        const DATA_ROOT = `../data/${YEAR}/${SEMESTER}/uni-galaxy`;
+        const CONFIG = { PATHS: { students: `${DATA_ROOT}/meta_students.dsv`, courses: `${DATA_ROOT}/meta_courses.dsv`, graphSC: `${DATA_ROOT}/graph_s_c.dsv`, graphCS: `${DATA_ROOT}/graph_c_s.dsv` }, COLORS: { TARGET: '#FFD700', FRIEND_LOW: '#38bdf8', FRIEND_MID: '#c084fc', FRIEND_HIGH: '#f472b6', EDGE: '#334155' }, LIMITS: { MAX_NODES: 3000, TOP_FRIENDS_LIST: 50, TOP_HEATMAP: 100 } };
         const DB = { students: [], courses: [], sc: [], cs: [] };
         let renderer, graph, explorerChart, comparatorChart;
         let currentMode = 'EXPLORER', currentTargetId = -1;

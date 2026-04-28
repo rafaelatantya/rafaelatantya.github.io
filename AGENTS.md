@@ -12,9 +12,9 @@ This repository uses a **Subdirectory-based Clean URL** architecture. All projec
 - **Projects:** Every project MUST have its own directory containing an `index.html`.
   - ✅ Correct: `/my-new-project/index.html`
   - ❌ Incorrect: `/my-new-project.html`
-- **Data:** All datasets (JSON, DSV, CSV) MUST be stored in the centralized `/data/` directory.
-  - ✅ Correct: `/data/my-new-project/db.json`
-  - ❌ Incorrect: `/my-new-project/db.json`
+- **Data:** All datasets (JSON, DSV, CSV) MUST be stored in the centralized `/data/` directory, organized by Year and Semester.
+  - ✅ Correct: `/data/2026/genap/my-project/db.json`
+  - ❌ Incorrect: `/data/my-project/db.json`
 - **Assets:** Global assets go to `/data/etc/`.
 
 ### 2. Pathing & Fetching
