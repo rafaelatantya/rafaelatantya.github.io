@@ -1,0 +1,40 @@
+export const TRANSLATIONS = {
+    id: {
+        headerSubtitle: "Jelajahi",
+        headerDesc: "Temukan mata kuliah di kepulauan data IPB.",
+        lblMode: "MODE",
+        lblKeyword: "KATA KUNCI",
+        lblLevel: "JENJANG:",
+        btnSearch: "CARI",
+        btnMore: "MUAT LEBIH BANYAK",
+        emptyState: "Pantai masih sepi. Mulai pencarian!",
+        notFound: "Hanya menemukan kerang kosong. Coba lagi!",
+        cardSch: "Jadwal",
+        cardDetail: "Detail",
+        phAll: "Cari Matkul, Kode, atau Deskripsi...",
+        loadingWaves: "Menyiapkan Ombak...",
+        surfSpeed: "KECEPATAN SELANCAR",
+        statsNilai: "Statistik Nilai",
+        desc: "Deskripsi",
+        noDesc: "Tidak ada deskripsi."
+    },
+    en: {
+        headerSubtitle: "Explore",
+        headerDesc: "Discover courses in the IPB data archipelago.",
+        lblMode: "MODE",
+        lblKeyword: "KEYWORDS",
+        lblLevel: "LEVEL:",
+        btnSearch: "SEARCH",
+        btnMore: "LOAD MORE",
+        emptyState: "The beach is quiet. Start searching!",
+        notFound: "Found only empty shells. Try again!",
+        cardSch: "Schedule",
+        cardDetail: "Detail",
+        phAll: "Search Course, Code, or Syllabus...",
+        loadingWaves: "Preparing Waves...",
+        surfSpeed: "SURF SPEED",
+        statsNilai: "Grade Statistics",
+        desc: "Description",
+        noDesc: "No description available."
+    }
+};

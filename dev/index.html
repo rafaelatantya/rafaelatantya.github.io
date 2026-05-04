@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IPB Course Explorer • Modular Edition</title>
+    
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="selection:bg-cyan-500/30 selection:text-cyan-200">
+
+    <!-- Scenery Background -->
+    <div class="scenery-container">
+        <div class="celestial-body"></div>
+        <div class="cloud" style="width: 200px; height: 60px; top: 10%; left: -200px;"></div>
+        <div class="cloud" style="width: 300px; height: 80px; top: 20%; left: -400px; animation-duration: 80s;"></div>
+        <div class="wave-layer"></div>
+        <div class="wave-layer front"></div>
+    </div>
+
+    <!-- Liquid Overlay FX -->
+    <div id="liquidLayer"></div>
+
+    <!-- Initial Loader -->
+    <div id="initLoader" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 bg-[#0f172a]/95 backdrop-blur-xl transition-opacity duration-700">
+        <div class="w-full max-w-lg text-center relative z-10">
+            <h2 class="text-4xl md:text-5xl font-black font-tech tracking-tighter mb-4 text-white drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]">
+                IPB <span style="color: var(--accent-primary)">COURSE ISLAND</span>
+            </h2>
+            <p id="loadStatus" class="text-sm font-bold tracking-widest uppercase mb-10 text-gray-400 animate-pulse" data-i18n="loadingWaves">Menyiapkan Ombak...</p>
+            
+            <div class="flex justify-between items-end mb-2 px-2">
+                <div class="text-[var(--accent-primary)] text-xs font-bold tracking-wider uppercase" data-i18n="surfSpeed">KECEPATAN SELANCAR</div>
+                <div id="downloadSpeed" class="text-2xl font-bold font-mono text-white">0 KB/s</div>
+            </div>
+            <div class="progress-bar-container">
+                <div id="initProgressBar" class="progress-bar-fill"><div class="surfer-icon">🏄</div></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500 font-bold mt-2 px-2">
+                <span id="filesCount">File: 0/0</span>
+                <span id="percentText">0%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App UI -->
+    <div id="mainApp" class="hidden opacity-0 transition-opacity duration-1000 min-h-screen flex flex-col">
+        <!-- Top Navigation -->
+        <div class="sticky top-0 z-30 pt-4 px-4 pb-2">
+            <div class="max-w-7xl mx-auto bg-[#0f172a]/80 rounded-full px-6 py-3 shadow-lg border border-[var(--glass-border)] flex justify-between items-center backdrop-blur-md">
+                <div class="flex items-center gap-3 cursor-pointer group" onclick="window.location.reload()">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-[var(--accent-primary)] to-blue-600 flex items-center justify-center text-white shadow-lg group-hover:rotate-12 transition-transform">
+                        <i class="fa-solid fa-water"></i>
+                    </div>
+                    <div class="hidden sm:block">
+                        <h1 class="font-bold text-lg leading-none font-tech text-white">COURSE <span style="color: var(--accent-primary)">ISLAND</span></h1>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <!-- Language Toggle -->
+                    <div class="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-full border border-white/10">
+                        <span class="text-[10px] font-bold text-gray-400">ID</span>
+                        <div class="relative inline-block w-8 align-middle select-none">
+                            <input type="checkbox" id="langToggle" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-2 appearance-none cursor-pointer border-slate-300"/>
+                            <label for="langToggle" class="toggle-label block overflow-hidden h-4 rounded-full bg-slate-500 cursor-pointer"></label>
+                        </div>
+                        <span class="text-[10px] font-bold text-gray-400">EN</span>
+                    </div>
+                    <!-- Theme Toggle -->
+                    <button id="themeToggleBtn" class="w-10 h-10 rounded-full bg-black/30 border border-white/10 text-white flex items-center justify-center hover:scale-110 transition shadow-sm">
+                        <i id="themeIcon" class="fa-solid fa-sun text-[var(--accent-secondary)]"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hero Section -->
+        <div class="flex-shrink-0 px-4 py-10 lg:py-16 relative z-10">
+            <div class="max-w-4xl mx-auto text-center mb-10">
+                <h2 class="text-4xl md:text-6xl font-black mb-4 font-tech text-[var(--text-main)] drop-shadow-sm leading-tight animate-enter">
+                    <span data-i18n="headerSubtitle">Jelajahi</span> <span style="color: var(--accent-primary)">Kepulauan</span> Data
+                </h2>
+                <p class="text-[var(--text-main)] opacity-70 font-bold text-lg max-w-lg mx-auto animate-enter" style="animation-delay: 0.1s" data-i18n="headerDesc">
+                    Temukan <span id="totalDataBadge" class="bg-[var(--glass-border)] px-2 py-0.5 rounded text-[var(--accent-primary)] border border-[var(--glass-border)]">0</span> mata kuliah di lautan data IPB.
+                </p>
+            </div>
+
+            <!-- Search Console -->
+            <div class="max-w-4xl mx-auto relative group animate-enter" style="animation-delay: 0.2s">
+                <div class="relative bg-[#0f172a]/80 backdrop-blur-md p-6 rounded-[2.5rem] border border-[var(--glass-border)] shadow-2xl">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                        <div class="md:col-span-3">
+                            <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-wider" data-i18n="lblMode">MODE</label>
+                            <div class="relative">
+                                <select id="searchMode" class="w-full glass-input rounded-xl px-4 py-3 font-bold appearance-none cursor-pointer transition shadow-sm">
+                                    <option value="ALL">✨ Smart Search</option>
+                                    <option value="NAME">🔤 Nama</option>
+                                    <option value="CODE">🔖 Kode</option>
+                                    <option value="DESC">📝 Deskripsi</option>
+                                    <option value="ID_MK">🆔 ID Matkul</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-gray-500 text-xs pointer-events-none"></i>
+                            </div>
+                        </div>
+                        <div class="md:col-span-6">
+                            <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-wider" data-i18n="lblKeyword">KATA KUNCI</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-4 top-4 text-gray-500"></i>
+                                <input type="text" id="searchInput" class="w-full glass-input rounded-xl pl-10 pr-4 py-3 font-bold placeholder-gray-600 shadow-sm transition">
+                            </div>
+                        </div>
+                        <div class="md:col-span-3 flex items-end">
+                            <button id="searchBtn" class="w-full bg-gradient-to-r from-[var(--accent-primary)] to-blue-500 text-white font-tech font-bold py-3.5 rounded-xl text-lg flex items-center justify-center gap-2 group/btn shadow-lg hover:shadow-[var(--accent-primary)]/50 transition-all active:scale-95">
+                                <span class="relative z-10" data-i18n="btnSearch">CARI</span> 
+                                <i class="fa-solid fa-water relative z-10 group-hover/btn:animate-bounce"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-white/10 flex items-center gap-3">
+                        <span class="text-[10px] font-bold text-gray-400 shrink-0" data-i18n="lblLevel">JENJANG:</span>
+                        <select id="strataSelect" class="bg-black/30 border border-white/10 rounded-lg px-3 py-1 text-xs text-white font-bold outline-none cursor-pointer">
+                            <option value="ALL">Semua</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Grid -->
+        <div class="flex-1 px-4 pb-20 max-w-7xl mx-auto w-full">
+            <div id="resultsContainer" class="grid grid-cols-1 gap-6 w-full">
+                <!-- Injected via main.js -->
+                <div class="text-center py-20 opacity-60">
+                    <div class="text-8xl mb-6 animate-bounce" style="animation-duration: 3s">🏝️</div>
+                    <p class="font-tech text-xl text-[var(--text-main)]" data-i18n="emptyState">Pantai masih sepi. Mulai pencarian!</p>
+                </div>
+            </div>
+            <button id="loadMoreBtn" class="hidden w-full max-w-md mx-auto mt-12 py-4 bg-[#0f172a] rounded-2xl font-bold hover:bg-black/50 transition-all active:scale-95 shadow-lg tracking-widest uppercase text-sm flex items-center justify-center gap-3 font-tech text-[var(--accent-primary)] border border-[var(--glass-border)]">
+                <span data-i18n="btnMore">MUAT LEBIH BANYAK</span> <i class="fa-solid fa-chevron-down animate-bounce"></i>
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center py-8 border-t border-[var(--glass-border)] mt-auto bg-[#0f172a]/50 backdrop-blur-md">
+            <p class="text-gray-400 font-bold text-xs">
+                Made with <i class="fa-solid fa-heart text-rose-500 animate-pulse mx-1"></i> by 
+                <a href="https://instagram.com/atantya" class="text-[var(--accent-primary)] hover:underline">@Atantya</a> & 
+                <a href="https://instagram.com/projectsbyatantya" class="text-[var(--accent-primary)] hover:underline">@ProjectsByAtantya</a>
+            </p>
+        </footer>
+    </div>
+
+    <!-- Core Logic -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
