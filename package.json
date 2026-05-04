@@ -1,0 +1,15 @@
+{
+  "name": "rafaelatantya-data-terminal",
+  "version": "1.0.0",
+  "description": "Data Terminal Portfolio Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "compression": "^1.7.4",
+    "express": "^4.18.2",
+    "morgan": "^1.10.0"
+  }
+}
