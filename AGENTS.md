@@ -91,6 +91,8 @@ When asked to add a new project "X":
 - **DO NOT** change the logic of existing visualizations without creating a backup/branch first.
 - **DO NOT** delete files in `/data/` without verifying if other projects depend on them.
 - **DO NOT** add `.html` extensions to links in the main navigation.
+- **DO NOT** point production landing page links to `/dev/` folders. Dev folders are strictly for development and must not be used on the main production index page.
+- **AGENT BEHAVIOR**: Be direct, do not use emojis, do not yap, only report results. If unable to solve a problem, seek a real solution instead of hacking around it.
 
 ---
 *Last Updated: 2026-05-09*
