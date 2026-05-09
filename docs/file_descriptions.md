@@ -37,5 +37,4 @@ This is the core modular workspace where new features are built using modern ES6
 - `main.js`: Main logic entry point for **Course Island**. Handles the search state, UI DOM manipulation, and debouncing.
 - `surveillance.js`: Main logic entry point for **Living Jungle**. Handles live traffic smart time calculation and matrix generation.
 - `parser.js`: Specific data parser for Uni Galaxy's `.dsv` files (handles stream loading of graph structures).
-- `graph.js` *(planned)*: Future logic for Sigma.js and Graphology integration.
-- `galaxy.js` *(planned)*: Future main logic entry point for Uni Galaxy.
+- `galaxy.js`: Main logic entry point for **Uni Galaxy**. Handles Sigma.js rendering, Graphology structures, pathfinding BFS, and heatmaps.

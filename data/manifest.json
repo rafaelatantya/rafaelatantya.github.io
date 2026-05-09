@@ -1,0 +1,6 @@
+{
+  "periods": [
+    { "year": "2026", "semester": "genap", "label": "2026 Genap" }
+  ],
+  "default": { "year": "2026", "semester": "genap" }
+}

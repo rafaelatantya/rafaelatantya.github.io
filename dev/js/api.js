@@ -1,10 +1,10 @@
 import { CONFIG } from './config.js';
 
-export async function fetchCourseDatabase(onProgress) {
+export async function fetchCourseDatabase(onProgress, year = CONFIG.STATE.YEAR, semester = CONFIG.STATE.SEMESTER) {
     const allData = [];
     const startTime = Date.now();
     let totalBytes = 0;
-    const prefix = CONFIG.FILE_PREFIX(CONFIG.YEAR, CONFIG.SEMESTER);
+    const prefix = CONFIG.FILE_PREFIX(year, semester);
 
     for (let i = 1; i <= CONFIG.TOTAL_FILES; i++) {
         const fileName = `${prefix}${i}.json`;
@@ -50,30 +50,37 @@ export async function fetchGradeStats(mkId) {
     return data.sort((a, b) => order.indexOf(a.HurufMutu) - order.indexOf(b.HurufMutu));
 }
 
+// --- MANIFEST API ---
+export async function fetchManifest() {
+    const response = await fetch(CONFIG.MANIFEST_URL);
+    if (!response.ok) throw new Error('Failed to fetch manifest');
+    return response.json();
+}
+
 // --- LIVING JUNGLE API ---
-export async function fetchLivingJungleStats() {
-    const url = `${CONFIG.LIVING_JUNGLE_BASE(CONFIG.YEAR, CONFIG.SEMESTER)}/stats.json`;
+export async function fetchLivingJungleStats(year = CONFIG.STATE.YEAR, semester = CONFIG.STATE.SEMESTER) {
+    const url = `${CONFIG.LIVING_JUNGLE_BASE(year, semester)}/stats.json`;
     const res = await fetch(url);
     if (!res.ok) throw new Error("Stats fetch failed");
     return res.json();
 }
 
-export async function fetchLivingJungleGlobalIndex() {
-    const url = `${CONFIG.LIVING_JUNGLE_BASE(CONFIG.YEAR, CONFIG.SEMESTER)}/global_index.json`;
+export async function fetchLivingJungleGlobalIndex(year = CONFIG.STATE.YEAR, semester = CONFIG.STATE.SEMESTER) {
+    const url = `${CONFIG.LIVING_JUNGLE_BASE(year, semester)}/global_index.json`;
     const res = await fetch(url);
     if (!res.ok) throw new Error("Global Index fetch failed");
     return res.json();
 }
 
-export async function fetchLivingJungleBatch(batchKey) {
-    const url = `${CONFIG.LIVING_JUNGLE_BASE(CONFIG.YEAR, CONFIG.SEMESTER)}/batch/${batchKey}.json`;
+export async function fetchLivingJungleBatch(batchKey, year = CONFIG.STATE.YEAR, semester = CONFIG.STATE.SEMESTER) {
+    const url = `${CONFIG.LIVING_JUNGLE_BASE(year, semester)}/batch/${batchKey}.json`;
     const res = await fetch(url);
     if (!res.ok) throw new Error("Batch 404");
     return res.json();
 }
 
-export async function fetchLivingJungleMatkul(prefix, onProgress) {
-    const url = `${CONFIG.LIVING_JUNGLE_BASE(CONFIG.YEAR, CONFIG.SEMESTER)}/matkul/${prefix}.json`;
+export async function fetchLivingJungleMatkul(prefix, onProgress, year = CONFIG.STATE.YEAR, semester = CONFIG.STATE.SEMESTER) {
+    const url = `${CONFIG.LIVING_JUNGLE_BASE(year, semester)}/matkul/${prefix}.json`;
     const startTime = Date.now(); 
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);

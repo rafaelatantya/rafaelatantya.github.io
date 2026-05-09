@@ -1,7 +1,7 @@
 import { CONFIG } from './config.js';
 import { TRANSLATIONS } from './i18n.js';
 import { fetchCourseDatabase, fetchGradeStats } from './api.js';
-import { triggerLiquidExplosion } from './utils.js';
+import { triggerLiquidExplosion, injectTimeMachine } from './utils.js';
 
 class CourseIslandApp {
     constructor() {
@@ -27,6 +27,7 @@ class CourseIslandApp {
             this.hideLoader();
             this.populateStrataFilter();
             document.getElementById('totalDataBadge').innerText = this.allData.length.toLocaleString();
+            injectTimeMachine();
         } catch (error) {
             console.error("Initialization failed:", error);
         }

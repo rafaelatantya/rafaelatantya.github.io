@@ -1,5 +1,6 @@
 import { fetchLivingJungleStats, fetchLivingJungleGlobalIndex, fetchLivingJungleBatch, fetchLivingJungleMatkul } from './api.js';
 import { renderChart, updateChartTheme, setChartType } from './analytics.js';
+import { injectTimeMachine } from './utils.js';
 
 // --- THEME & UTILS ---
 const themeIcon = document.getElementById('themeIcon');
@@ -256,6 +257,7 @@ function getScheduleWeight(scheduleArray) {
         setTimeout(() => {
             if(loader) loader.style.opacity = '0';
             setTimeout(() => { if(loader) loader.remove(); if(app) app.classList.remove('hidden'); setTimeout(() => {if(app) app.style.opacity = '1'}, 50); }, 500);
+            injectTimeMachine();
         }, 500);
 
     } catch (e) { 

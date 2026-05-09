@@ -81,13 +81,12 @@ When asked to add a new project "X":
 
 ## 📂 DOCUMENTATION & ROADMAP
 
-- **`/docs/implementation_milestones.md`**: The active roadmap for modularization. Always check this to see completed vs. pending tasks.
 - **`/docs/file_descriptions.md`**: Detailed mapping of every file's purpose in the new `/dev/` ecosystem.
 
 ---
 
 ## ⚠️ PROHIBITED ACTIONS
-- **NEVER** perform an automatic `git push` without explicit user confirmation.
+- **NEVER** perform an automatic `git push` under ANY circumstances. The user will handle all github pushes manually.
 - **DO NOT** use TailwindCSS classes unless explicitly requested.
 - **DO NOT** change the logic of existing visualizations without creating a backup/branch first.
 - **DO NOT** delete files in `/data/` without verifying if other projects depend on them.
