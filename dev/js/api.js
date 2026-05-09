@@ -49,3 +49,53 @@ export async function fetchGradeStats(mkId) {
     const order = ['A', 'AB', 'B', 'BC', 'C', 'D', 'E', 'BL'];
     return data.sort((a, b) => order.indexOf(a.HurufMutu) - order.indexOf(b.HurufMutu));
 }
+
+// --- LIVING JUNGLE API ---
+export async function fetchLivingJungleStats() {
+    const url = `${CONFIG.LIVING_JUNGLE_BASE(CONFIG.YEAR, CONFIG.SEMESTER)}/stats.json`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Stats fetch failed");
+    return res.json();
+}
+
+export async function fetchLivingJungleGlobalIndex() {
+    const url = `${CONFIG.LIVING_JUNGLE_BASE(CONFIG.YEAR, CONFIG.SEMESTER)}/global_index.json`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Global Index fetch failed");
+    return res.json();
+}
+
+export async function fetchLivingJungleBatch(batchKey) {
+    const url = `${CONFIG.LIVING_JUNGLE_BASE(CONFIG.YEAR, CONFIG.SEMESTER)}/batch/${batchKey}.json`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Batch 404");
+    return res.json();
+}
+
+export async function fetchLivingJungleMatkul(prefix, onProgress) {
+    const url = `${CONFIG.LIVING_JUNGLE_BASE(CONFIG.YEAR, CONFIG.SEMESTER)}/matkul/${prefix}.json`;
+    const startTime = Date.now(); 
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const contentLength = response.headers.get('content-length'); 
+    const total = contentLength ? parseInt(contentLength, 10) : 0;
+    let loaded = 0; 
+    
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let result = '';
+
+    while(true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        loaded += value.byteLength;
+        result += decoder.decode(value, { stream: true });
+        
+        const elapsedTime = (Date.now() - startTime) / 1000; 
+        const kbps = ((loaded / elapsedTime) / 1024).toFixed(0); 
+        const percent = total ? Math.round((loaded / total) * 100) : 0; 
+        if (onProgress) onProgress(percent, `${kbps} Kbps`);
+    }
+    return JSON.parse(result);
+}

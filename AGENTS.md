@@ -32,6 +32,23 @@ The `.html` files at the root (e.g., `surveillance.html`, `galaxy.html`) are **R
 
 ---
 
+## 🧩 MODULAR ECOSYSTEM GOAL (`/dev/`)
+
+The ultimate goal of this repository is to transition from monolithic, "vibecoded" HTML files into a **Super Modular ES6 Architecture** located in the `/dev/` directory.
+
+### 1. Data Switchability
+- The system must support easy switching of datasets (e.g., changing from `2026/genap` to `2026/ganjil`).
+- This should be managed centrally via a config file (e.g., `dev/js/config.js`) so that developers/agents only need to change a single configuration variable to load an entirely different dataset for the whole ecosystem.
+
+### 2. Extensibility
+- New features, UI components, and API handlers must be built as independent ES6 modules (`api.js`, `utils.js`, `main.js`, etc.).
+- Avoid dumping all logic into a single HTML file. Keep the HTML strictly for structure and Tailwind classes, while all state and logic are handled by Javascript modules.
+
+### 3. Static Server Compatibility
+- All infrastructure and data fetching MUST be fully compatible with standard static HTTP servers (e.g., GitHub Pages). Do not introduce server-side dependencies (like Node.js routes or SSR) for the core applications.
+
+---
+
 ## 🔍 PROJECT-SPECIFIC CONTEXT
 
 ### 🏝️ Course Island (`/course-island/`)
@@ -62,6 +79,13 @@ When asked to add a new project "X":
 
 ---
 
+## 📂 DOCUMENTATION & ROADMAP
+
+- **`/docs/implementation_milestones.md`**: The active roadmap for modularization. Always check this to see completed vs. pending tasks.
+- **`/docs/file_descriptions.md`**: Detailed mapping of every file's purpose in the new `/dev/` ecosystem.
+
+---
+
 ## ⚠️ PROHIBITED ACTIONS
 - **NEVER** perform an automatic `git push` without explicit user confirmation.
 - **DO NOT** use TailwindCSS classes unless explicitly requested.
@@ -70,4 +94,4 @@ When asked to add a new project "X":
 - **DO NOT** add `.html` extensions to links in the main navigation.
 
 ---
-*Last Updated: 2026-04-28*
+*Last Updated: 2026-05-09*
