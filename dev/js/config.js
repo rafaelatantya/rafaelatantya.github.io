@@ -17,7 +17,7 @@ export const CONFIG = {
 
     // Course Island
     TOTAL_FILES: 15,
-    FILE_PREFIX: (year = CONFIG.STATE.YEAR, semester = CONFIG.STATE.SEMESTER) => CONFIG._resolveData(year, semester, 'course-island/db_matkul_'),
+    FILE_PREFIX: (year = CONFIG.STATE.YEAR, semester = CONFIG.STATE.SEMESTER) => new URL('../data/course-island/db_matkul_', import.meta.url).pathname,
     SEARCH_LIMIT: 20,
     API_STATISTIK: (id) => `https://krs.ipb.ac.id/api/StatistikNilai?mataKuliahId=${id}`,
 

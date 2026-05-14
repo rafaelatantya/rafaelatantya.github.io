@@ -18,9 +18,63 @@ export async function fetchCourseDatabase(onProgress, year = CONFIG.STATE.YEAR, 
             const text = await blob.text();
             const json = JSON.parse(text);
             
+            const strataMapRev = ["S1", "S2", "S3", "D3", "D4"];
+            const jenisMapRev = ["K", "P", "R"];
+            const hariMapRev = { SN: "Senin", SL: "Selasa", RB: "Rabu", KM: "Kamis", JM: "Jumat", SB: "Sabtu", MG: "Minggu" };
+            const jadwalRegex = /^([A-Z]{2})(\d{2}:\d{2}-\d{2}:\d{2})(?:#(.*))?$/;
+
             for (const item of json) {
-                const finalItem = item.Details ? item.Details : item;
-                if (finalItem) allData.push(finalItem);
+                if (Array.isArray(item)) {
+                    const decompressedStrata = typeof item[4] === "number" ? strataMapRev[item[4]] : item[4];
+                    const decompressedPrasyarat = item[6];
+                    const decompressedSemester = item[7];
+                    const decompressedJK = item[8][0];
+                    const decompressedJP = item[8][1];
+                    const decompressedJR = item[8][2];
+
+                    const decompressedJadwal = (!item[9] || item[9].length === 0) ? [] : item[9].map(j => {
+                        const jId = j[0];
+                        const jJenis = typeof j[1] === "number" ? jenisMapRev[j[1]] : j[1];
+                        const jKp = j[2];
+                        
+                        const jadwalStrings = Array.isArray(j[3]) ? j[3].map(s => {
+                            let strLengkap = s;
+                            const match = s.match(jadwalRegex);
+                            if (match) {
+                                const hari = hariMapRev[match[1]] || match[1];
+                                const waktu = match[2];
+                                const ruang = match[3] ? " di " + match[3] : " di Ruangan Disesuaikan";
+                                strLengkap = `${hari} ${waktu}${ruang}`;
+                            }
+                            return strLengkap;
+                        }) : [];
+
+                        return {
+                            JadwalKuliahId: jId,
+                            JenisKelas: jJenis,
+                            KelasParalel: jKp,
+                            Jadwal: jadwalStrings
+                        };
+                    });
+
+                    allData.push({
+                        MataKuliahId: item[0],
+                        Kode: item[1],
+                        Nama: item[2],
+                        SksNama: item[3],
+                        Strata: decompressedStrata,
+                        Deskripsi: item[5],
+                        MataKuliahPrasyarat: decompressedPrasyarat,
+                        Semester: decompressedSemester,
+                        JumlahKelasKuliah: decompressedJK,
+                        JumlahKelasPraktikum: decompressedJP,
+                        JumlahKelasResponsi: decompressedJR,
+                        ListJadwal: decompressedJadwal
+                    });
+                } else {
+                    const finalItem = item.Details ? item.Details : item;
+                    if (finalItem) allData.push(finalItem);
+                }
             }
 
             const elapsed = (Date.now() - startTime) / 1000;
